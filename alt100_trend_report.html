@@ -27,7 +27,7 @@ ol{margin:6px 0 0;padding-left:20px} li{margin:5px 0}
 <div class="card verdict">
   <h2>结论先行</h2>
   <p style="margin:6px 0"><span class="big">趋势通道 REF（纯趋势MA20双向）在 100 山寨币上显著优于当前体系</span>：
-  全史盈亏比 <span class="up">2.39</span> vs 当前真实
+  全史盈亏比 <span class="up">2.40</span> vs 当前真实
   <span class="down">1.39</span>（约 1.7 倍），
   正向币占比 97% vs 当前体系无法币种化（动态选币）。</p>
   <p style="margin:6px 0">当前体系胜率更高（54% vs 44%），靠 15m 入场+BTC过滤+选币；
@@ -38,8 +38,8 @@ ol{margin:6px 0 0;padding-left:20px} li{margin:5px 0}
 <div class="card">
   <h2>一、全历史对照（in-sample）</h2>
   <table><tr><th>方案</th><th>笔数</th><th>胜率</th><th>均R</th><th>盈亏比</th><th>总R</th><th>正向币</th></tr>
-  <tr class='hl'><td style='text-align:left'>趋势通道 REF（MA20双向）</td><td>6364</td><td>44%</td><td>+0.288</td><td><b>2.39</b></td><td>+1833</td><td>0%</td></tr>
-  <tr><td style='text-align:left'>趋势通道 B+（同向加做空）</td><td>2102</td><td>41%</td><td>+0.244</td><td><b>1.63</b></td><td>+514</td><td>0%</td></tr>
+  <tr class='hl'><td style='text-align:left'>趋势通道 REF（MA20双向）</td><td>6364</td><td>44%</td><td>+0.288</td><td><b>2.40</b></td><td>+1833</td><td>0%</td></tr>
+  <tr><td style='text-align:left'>趋势通道 B+（同向加做空）</td><td>2101</td><td>41%</td><td>+0.244</td><td><b>1.63</b></td><td>+513</td><td>0%</td></tr>
   <tr><td style='text-align:left'>当前体系 真实（signals.db 全量）</td><td>512</td><td>54%</td><td>+0.098</td><td><b>1.39</b></td><td>+50</td><td>0%</td></tr>
   <tr><td style='text-align:left'>当前体系 真实（与100币重叠75币子集）</td><td>110</td><td>55%</td><td>+0.114</td><td><b>1.51</b></td><td>+13</td><td>0%</td></tr>
   </table>
@@ -50,21 +50,21 @@ ol{margin:6px 0 0;padding-left:20px} li{margin:5px 0}
 <div class="card">
   <h2>二、前向窗口对照（out-of-sample，最近120根）</h2>
   <table><tr><th>方案</th><th>笔数</th><th>胜率</th><th>均R</th><th>盈亏比</th><th>总R</th><th>正向币</th></tr>
-  <tr class='hl'><td style='text-align:left'>趋势通道 REF（MA20双向）</td><td>1122</td><td>48%</td><td>+0.314</td><td><b>2.63</b></td><td>+352</td><td>0%</td></tr>
-  <tr><td style='text-align:left'>趋势通道 B+（同向加做空）</td><td>442</td><td>41%</td><td>+0.163</td><td><b>1.42</b></td><td>+72</td><td>0%</td></tr>
+  <tr class='hl'><td style='text-align:left'>趋势通道 REF（MA20双向）</td><td>1122</td><td>48%</td><td>+0.314</td><td><b>2.63</b></td><td>+353</td><td>0%</td></tr>
+  <tr><td style='text-align:left'>趋势通道 B+（同向加做空）</td><td>441</td><td>41%</td><td>+0.163</td><td><b>1.42</b></td><td>+72</td><td>0%</td></tr>
   </table>
-  <p class="note">趋势通道前向窗口仍稳定（REF PF 2.63、86% 币盈利），
+  <p class="note">趋势通道前向窗口仍稳定（REF PF 2.63、87% 币盈利），
   未出现 regime 崩溃，较日线代理（A/B 在前向窗口才靠偏多市转正）更抗 regime。</p>
 </div>
 
 <div class="card">
   <h2>三、持仓周期敏感度（趋势通道 REF · natural + 固定 horizon）</h2>
   <table><tr><th>持仓窗口</th><th>笔数</th><th>胜率</th><th>均R</th><th>盈亏比</th><th>总R</th></tr>
-  <tr><td style='text-align:left'>natural（反向信号平仓）</td><td>6364</td><td>44%</td><td>+0.288</td><td><b>2.39</b></td><td>+1833</td><td>0%</td></tr>
+  <tr><td style='text-align:left'>natural（反向信号平仓）</td><td>6364</td><td>44%</td><td>+0.288</td><td><b>2.40</b></td><td>+1833</td><td>0%</td></tr>
   <tr><td style='text-align:left'>固定 1 日</td><td>33579</td><td>58%</td><td>+0.100</td><td><b>1.86</b></td><td>+3370</td><td>0%</td></tr>
-  <tr><td style='text-align:left'>固定 3 日</td><td>17173</td><td>55%</td><td>+0.105</td><td><b>1.53</b></td><td>+1796</td><td>0%</td></tr>
+  <tr><td style='text-align:left'>固定 3 日</td><td>17173</td><td>55%</td><td>+0.105</td><td><b>1.53</b></td><td>+1797</td><td>0%</td></tr>
   <tr><td style='text-align:left'>固定 5 日</td><td>11801</td><td>54%</td><td>+0.116</td><td><b>1.47</b></td><td>+1364</td><td>0%</td></tr>
-  <tr><td style='text-align:left'>固定 10 日</td><td>7007</td><td>51%</td><td>+0.133</td><td><b>1.39</b></td><td>+932</td><td>0%</td></tr>
+  <tr><td style='text-align:left'>固定 10 日</td><td>7007</td><td>52%</td><td>+0.133</td><td><b>1.39</b></td><td>+932</td><td>0%</td></tr>
   </table>
   <p class="note">natural（让利润奔跑、反向信号才平）盈亏比最高，符合铁律⑨"让利润奔跑"；固定短 horizon 胜率更高但盈亏比下降。
   建议趋势通道用 natural 出场（与 ETH 真实出场口径一致）。</p>
@@ -96,7 +96,7 @@ ol{margin:6px 0 0;padding-left:20px} li{margin:5px 0}
 <div class="card" style="background:#f0fff4;border-color:#bbf7d0">
   <h2 style="color:#15803d;margin-top:0">六、实时前向账本（阶段B · 起点 2026-09-02）</h2>
   <p style="margin:4px 0">已启动，等待首个平仓信号… 当前 0 笔已持仓、逐日累计（次根开盘入场·无前视，与回测同出场引擎）</p>
-  <p class="note">回测基线(当根开盘·含前视)：全史 PF 2.39/+1833R · 前向 PF 2.63/+352R</p>
+  <p class="note">回测基线(当根开盘·含前视)：全史 PF 2.40/+1833R · 前向 PF 2.63/+353R</p>
   <p class="note">实盘可达基线(次根开盘·无前视)：全史 PF 1.12/+228R · 近120根 PF 0.77/+-77R</p>
   <p class="note"><b>诚实结论：回测 PF 被当根开盘前视显著高估，实盘可达 PF 仅约 1.1–0.8。</b>
   达标门槛：账本 PF ≥ 实盘基线(PF≥1.5 且总R转正) 才拍板并权重（铁律⑥ 先加权不硬拦）。</p>
