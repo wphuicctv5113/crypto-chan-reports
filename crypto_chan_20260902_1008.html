@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>币情分析 · 量价+缠论</title>
+<style>
+:root{--bg:#f6f8fa;--card:#ffffff;--border:#d0d7de;--border-soft:#eaeef2;--text:#1f2328;--muted:#656d76;--up:#cf222e;--down:#1a7f37;--accent:#0969da;--gold:#9a6700;--tag-bg:#ddf4ff;--tag-text:#0969da;--warn-bg:#fff8c5;--warn-text:#9a6700;--dir-long-bg:#ffebe9;--dir-short-bg:#dafbe1}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;padding:20px;line-height:1.6}
+h1{font-size:22px;font-weight:600;margin-bottom:4px}
+h2{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--accent);border-bottom:1px solid var(--border-soft);padding-bottom:6px}
+h3{font-size:14px;font-weight:500;margin-bottom:8px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:16px;box-shadow:0 1px 0 rgba(27,31,36,.04)}
+.muted{color:var(--muted);font-size:12px}
+.up{color:var(--up);font-weight:500}.down{color:var(--down);font-weight:500}.flat{color:var(--muted)}
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.ov-item{background:var(--bg);border:1px solid var(--border-soft);border-radius:6px;padding:12px;text-align:center}
+.ov-label{color:var(--muted);font-size:12px;margin-bottom:4px}
+.ov-price{font-size:18px;font-weight:600}
+.ov-bias{font-size:16px;font-weight:600;padding:3px 12px;border-radius:6px;display:inline-block}
+.ov-bias.bull{color:var(--up);background:var(--dir-long-bg)}
+.ov-bias.bear{color:var(--down);background:var(--dir-short-bg)}
+.ov-bias.neutral{color:var(--muted);background:#eaeef2}
+.ov-bias.choppy{color:#9a6a00;background:#fff3d6}
+.top5-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.top5-grid{grid-template-columns:1fr}}
+.top5-col{background:var(--bg);border:1px solid var(--border-soft);border-radius:6px;padding:12px}
+.top5-list{list-style:none}
+.top5-list li{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-soft)}
+.top5-list li:last-child{border-bottom:none}
+.coin-card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.coin-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:10px 14px;background:#f6f8fa;border-bottom:1px solid var(--border-soft)}
+.coin-name{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-width:0;flex:1}
+.risk-tag{display:block;font-size:11px;color:var(--warn-text);background:var(--warn-bg);border-radius:4px;padding:0 5px;margin-top:3px;cursor:help}
+.sig-time{font-size:11px;color:var(--muted);border:1px dashed var(--border);border-radius:4px;padding:0 5px;cursor:help;flex-shrink:0}
+.rank{background:var(--accent);color:#fff;font-weight:600;border-radius:6px;padding:1px 8px;font-size:12px;flex-shrink:0}
+.sym{font-size:16px;font-weight:600;flex-shrink:0}
+.src{color:var(--muted);font-size:11px;border:1px solid var(--border);border-radius:4px;padding:0 5px;background:#fff;flex-shrink:0}
+.sig-tag{font-size:11px;border-radius:4px;padding:1px 6px;flex-shrink:1;cursor:help;white-space:normal;max-width:100%;line-height:1.4}
+.sig-bot{background:#dafbe1;color:#1a7f37}
+.sig-brk{background:#fff8c5;color:#9a6700}
+.sig-pull{background:#ddf4ff;color:#0969da}
+.sig-trend{background:#eaeef2;color:#656d76}
+.sig-exh{background:#ffebe9;color:#cf222e}
+.conf-tag{font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:help;white-space:nowrap}
+.conf-high{background:#dafbe1;color:#1a7f37;border:1px solid #1a7f37}
+.conf-mid{background:#fff8c5;color:#9a6700;border:1px solid #9a6700}
+.conf-low{background:#ffebe9;color:#cf222e;border:1px solid #cf222e}
+.watch-stage{background:#ddf4ff;color:#0969da;border:1px solid #0969da;font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;white-space:nowrap}
+.pos-tag{font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:help;white-space:nowrap}
+.pos-low{background:#dafbe1;color:#1a7f37}
+.pos-mid{background:#ddf4ff;color:#0969da}
+.pos-midhi{background:#fff8c5;color:#9a6700}
+.pos-high{background:#ffebe9;color:#cf222e}
+.runaway-tag{font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:help;white-space:nowrap;background:#ffebe9;color:#cf222e;border:1px solid #cf222e}
+.rr-tag{font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:help;white-space:nowrap;font-weight:600}
+.rr-high{background:#dafbe1;color:#1a7f37;border:1px solid #1a7f37}
+.rr-low{background:#ffebe9;color:#cf222e;border:1px solid #cf222e}
+.rr-mid{background:#eaeef2;color:#57606a;border:1px solid #d0d7de}
+.bias-warn-tag{font-size:10px;border-radius:4px;padding:1px 5px;flex-shrink:0;cursor:help;white-space:nowrap;background:#fff8c5;color:#9a6700;border:1px solid #d4a72c}
+.entry-zone{background:#fff8c5;border:1px dashed #d4a72c;border-radius:6px;margin:0 14px 4px;padding:5px 10px;font-size:12px}
+.entry-zone b{color:#9a6700}
+.entry-zone .muted{margin-left:8px}
+.coin-stars{font-size:13px;flex-shrink:0;margin-left:8px}
+.coin-top{padding:10px 14px 6px}
+.coin-price{font-size:18px;font-weight:600}
+.coin-price .chg{font-size:13px;font-weight:500;margin-left:6px}
+.dir-row{margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dir{padding:2px 10px;border-radius:6px;font-weight:600;font-size:12px;flex-shrink:0}
+.dir-long{background:var(--dir-long-bg);color:var(--up)}
+.dir-short{background:var(--dir-short-bg);color:var(--down)}
+.dir-flat{background:#eaeef2;color:var(--muted)}
+.closed-row{opacity:0.65}
+.closed-row td:first-child::after{content:" ✓";color:var(--muted);font-size:11px}
+.coin-top .muted{font-size:12px}
+.plan-row{padding:4px 14px 12px}
+.plan-box{background:var(--bg);border:1px solid var(--border-soft);border-radius:6px;padding:8px 10px;font-size:12px}
+.plan-head{font-weight:600;font-size:12px;color:var(--accent);margin-bottom:4px}
+.plan-head-stop{color:var(--down);margin-top:8px}
+.plan-head-tp{color:#3B6D11;margin-top:8px}
+.plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 12px}
+@media(max-width:480px){.plan-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){
+  body{padding:12px}
+  h1{font-size:18px}
+  .coin-head{padding:8px 12px;flex-wrap:wrap}
+  .coin-name{flex:1 1 100%;margin-bottom:4px}
+  .coin-stars{flex-shrink:0}
+  .sym{font-size:15px}
+  .src,.sig-tag{font-size:10px;padding:0 4px}
+  .coin-top{padding:8px 12px 6px}
+  .coin-price{font-size:15px}
+  .coin-price .chg{font-size:12px}
+  .dir-row{font-size:11px}
+  .entry-zone{margin:0 12px 4px;font-size:11px}
+  .plan-row{padding:4px 12px 10px}
+  .coin-analysis{padding:8px 12px}
+  .coin-more{padding:6px 12px}
+}
+.plan-item{text-align:left;min-width:0}
+.plan-label{color:var(--muted);font-size:11px;display:block;margin-bottom:1px}
+.plan-val{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-sub{color:var(--muted);font-size:11px;margin-left:3px;font-weight:400}
+.plan-sub-ok{color:var(--down);font-size:11px;margin-left:3px;font-weight:500}
+.plan-sub-mid{color:var(--gold);font-size:11px;margin-left:3px;font-weight:500}
+.plan-sub-far{color:var(--up);font-size:11px;margin-left:3px;font-weight:500}
+.plan-foot{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border-soft);display:flex;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:11px}
+.chip-note{margin-top:6px;padding:4px 8px;background:#FAEEDA;border-radius:4px;font-size:11px;color:#854F0B;cursor:help}
+.coin-analysis{border-top:1px solid var(--border-soft);padding:8px 14px;background:var(--bg)}
+.coin-analysis summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:500}
+.coin-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+@media(max-width:600px){.coin-analysis-grid{grid-template-columns:1fr}}
+.chan-box,.vp-box{background:var(--card);border:1px solid var(--border-soft);border-radius:6px;padding:8px 10px;font-size:12px}
+.vp-signals{margin:4px 0 0 16px;font-size:11px}
+.tag-line{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.tag{background:var(--tag-bg);color:var(--tag-text);border-radius:4px;padding:1px 6px;font-size:11px;cursor:help}
+.tag.up{background:var(--dir-long-bg);color:var(--up)}
+.tag.down{background:var(--dir-short-bg);color:var(--down)}
+.tag.flat{background:#eaeef2;color:var(--muted)}
+.warn{color:var(--warn-text);background:var(--warn-bg);font-size:11px;padding:2px 6px;border-radius:4px;margin:3px 0;cursor:help}
+.sig-line{color:var(--up);font-size:11px;font-weight:600;margin:3px 0;cursor:help}
+.coin-more{border-top:1px solid var(--border-soft);padding:6px 14px;background:#fafbfc}
+.coin-more summary{cursor:pointer;color:var(--accent);font-size:12px}
+.news-block h4{font-size:12px;margin:6px 0 3px;color:var(--muted)}
+.news-block ul{margin-left:16px;font-size:12px}
+.news-block a{color:var(--accent);text-decoration:none}
+.chip-box{background:var(--card);border:1px solid var(--border-soft);border-radius:6px;padding:8px 10px;font-size:12px}
+.chip-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:8px}
+.chip-item{font-size:12px;color:var(--muted)}
+.chip-item b{color:var(--text);font-weight:600}
+.chip-bars{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.chip-row{display:grid;grid-template-columns:70px 1fr 42px;align-items:center;gap:6px}
+.chip-price{font-size:11px;color:var(--muted);text-align:right}
+.chip-track{background:var(--bg);border-radius:3px;height:10px;overflow:hidden}
+.chip-bar{background:var(--tag-bg);height:100%;border-radius:3px}
+.chip-bar-poc{background:#EF9F27;height:100%;border-radius:3px}
+.chip-pct{font-size:11px;color:var(--muted)}
+.perf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.perf-item{background:var(--bg);border:1px solid var(--border-soft);border-radius:6px;padding:12px;text-align:center}
+.perf-num{font-size:20px;font-weight:600}
+.perf-tables{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.perf-tables{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border-soft)}
+th{color:var(--muted);font-weight:500;background:var(--bg)}
+.table-wrap{overflow-x:auto}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:16px}
+.glossary summary{cursor:pointer;font-weight:500;font-size:14px;color:var(--accent)}
+.glossary-list{margin-top:10px;columns:2;column-gap:24px}
+@media(max-width:600px){.glossary-list{columns:1}}
+.glossary-list li{padding:3px 0;font-size:12px;break-inside:avoid}
+.card summary{cursor:pointer;font-weight:500;font-size:14px;color:var(--accent);overflow-wrap:anywhere}
+/* ===== 移动端优化（2026-08-12 老板反馈：手机看板10列表格横向截断/nowrap标签溢出 → rsp-table卡片化+标签换行）===== */
+@media(max-width:600px){
+  .card{padding:12px}
+  .perf-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .perf-item{padding:10px 6px}
+  .perf-num{font-size:17px}
+  .plan-val{white-space:normal;overflow:visible}
+  .conf-tag,.watch-stage,.pos-tag,.runaway-tag,.rr-tag,.slope-tag,.bias-warn-tag,.sig-time{white-space:normal;flex-shrink:1;max-width:100%}
+  .entry-zone .muted{margin-left:0;display:block}
+  /* 宽表 → 纵向卡片（thead隐藏，tr变卡片，td变 label:value 行） */
+  table.rsp-table{display:block}
+  table.rsp-table thead{display:none}
+  table.rsp-table tbody{display:block;width:100%}
+  table.rsp-table tr{display:block;margin:0 0 10px;padding:8px 12px;background:var(--bg);border:1px solid var(--border-soft);border-radius:8px}
+  table.rsp-table tr:last-child{margin-bottom:0}
+  table.rsp-table td{display:block;padding:5px 0;border-bottom:1px dashed var(--border-soft);font-size:12px;text-align:left}
+  table.rsp-table td:last-child{border-bottom:none}
+  table.rsp-table td::before{content:attr(data-label);display:inline-block;color:var(--muted);font-size:11px;font-weight:500;width:88px;margin-right:6px}
+  .closed-row{opacity:1}
+  .closed-row td:first-child::after{content:""}
+  /* ===== 全站移动端完善（2026-08-13 老板拍板"所有板块都要考虑手机观看"）===== */
+  h1{font-size:20px}
+  .sub{font-size:11px}
+  h2{font-size:16px}
+  .card summary{font-size:13px;padding:4px 0}
+  .top5-list li{font-size:12px;padding:4px 0}
+  .top5-item{font-size:12px}
+  .ov-item{font-size:12px}
+  .ov-item .muted{font-size:10px}
+  .ov-num{font-size:16px}
+  .chip-row{grid-template-columns:52px 1fr 34px;gap:4px;font-size:11px}
+  .news-block{font-size:12px}
+  /* ===== 2026-08-27 老板反馈"新增内容没适配移动端"·5 板卡 ===== */
+  /* 推荐/萌芽/拦截板卡 长文本 reason 在 375px 溢出 */
+  .top5-list li{overflow-wrap:anywhere;word-break:break-word}
+  .top5-list li .muted{font-size:11px;line-height:1.4;display:inline-block;max-width:100%}
+  /* 拦截池 released 行的 chg/muted 标签全宽换行 */
+  .top5-list li{flex-wrap:wrap;align-items:flex-start}
+  .top5-list li .sym{font-size:14px}
+  /* 早期/萌芽板块原因字段 */
+  .early-reason,.watch-reason{display:block;margin-top:2px;font-size:11px;color:var(--muted);line-height:1.4}
+  /* 绩效表在 375px 强转单列 + 横向滚动 */
+  .perf-tables{grid-template-columns:1fr;gap:10px}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  /* 入场有效性诊断表 rsp-table 已处理；reason 长文本也断行 */
+  table.rsp-table td{overflow-wrap:anywhere;word-break:break-word}
+  /* 推荐卡 coin-head 标签在 375px 收紧字号防溢出 */
+  .sig-tag{font-size:10px;padding:1px 4px}
+  .news-block h4{font-size:12px}
+  .coin-analysis{font-size:11px}
+  .sig-tag{font-size:10px;line-height:1.6}
+  .plan-label{font-size:11px}
+  .plan-sub{font-size:10px}
+  .entry-zone{font-size:12px}
+  .risk-tag{font-size:10px}
+  footer{font-size:11px}
+  .glossary summary{font-size:13px}
+  .glossary-list li{font-size:11px}
+  details.card summary{padding:8px 0}
+  details.card summary h2{font-size:14px}
+}
+</style></head><body>
+<h1>📊 币情分析 · 量价 + 缠论</h1>
+<div class="sub">2026-09-02 10:08:54 (UTC+8) · 日内口径 UTC+0 · 量价驱动为主·缠论辅助 · 数据: Binance现货 + Gate补充 · 并行获取 · 浅色主题 · 数据截至 2026-09-02 10:08:53</div>
+
+    <details class="card glossary">
+      <summary>📖 缠论 + 量价 指标说明（点击展开）</summary>
+      <ul class="glossary-list"><li><b>量比</b>: 当前成交量 / 近20日均量。&gt;1.5放量(资金涌入)，&lt;0.8缩量(观望)</li><li><b>地量</b>: 量比&lt;0.35，极度缩量。可能是筑底信号(卖盘枯竭)</li><li><b>放量突破</b>: 放量+突破近20日高点。强势启动信号（量价主驱动方向）</li><li><b>量价齐升</b>: 价格上涨+放量。趋势健康，资金认可（做多主信号）</li><li><b>缩量回调</b>: 上涨后回调但量能萎缩。健康回调，可等回踩介入（做多信号）</li><li><b>顶部量价背离</b>: 价格新高但量能萎缩。多头衰竭预警（做空信号）</li><li><b>MACD背离</b>: MACD柱子与价格走势不一致：价新高但MACD面积缩小 = 顶部背离</li><li><b>量价多周期共振</b>: 日线量价方向与1小时量价方向一致，信号更强</li><li><b>信号类型</b>: 行情所处位置的分类：🟢底部反转(地量筑底后放量启动)/🟡中枢突破(放量突破平台)/🌱萌芽启动(当日0-3%,等回踩)/🌅早盘启动(当日1-5%)/🚀启动加速(当日3-10%,大行情早期)/⚡快速启动(当日10-25%仍1h放量拉升)/🟣缩量止跌(中位缩量企稳)/🔵缩量回调启动(健康回调结束中继)/⚪趋势延续(已演绎,追高需谨慎)/🔴动能耗尽(顶部背离,可做空)/🟠暴跌后等待(不追跌做空,等反弹)</li><li><b>入场区间</b>: 精准入场参考：区间低点=回踩挂单位，区间高点=突破确认位。在区间内入场比追市价更优</li><li><b>筹码分布</b>: 各价位的筹码集中度（按K线成交量分摊到价格档位构建）。筹码密集区=大量资金持仓成本区，是真实支撑/压力</li><li><b>POC</b>: 筹码峰值价（Point of Control）：成交量最大的价位=市场最大成本区，价格最容易被拉回的位置</li><li><b>筹码密集区</b>: 累计60%筹码集中的价格带。下沿=强支撑（止损参考），上沿=强压力（止盈参考）</li><li><b>套牢盘</b>: 当前价上方的筹码占比。比例高=上方压力大，上涨到该区域会反复受阻</li><li><b>获利盘</b>: 当前价下方的筹码占比。比例高=下方支撑强，下跌到该区域容易获支撑</li><li><b>趋势</b>: 缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)</li><li><b>背驰</b>: 趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号</li><li><b>井论</b>: 5个同向分型比较 1/3/5 力度。大井(5&gt;3,1)=一类买卖点；小井=二类买卖点</li></ul>
+    </details>
+    <section class="card overview">
+      <h2>市场总体总览</h2>
+      <div class="ov-grid">
+        <div class="ov-item"><div class="ov-label">BTC</div>
+          <div class="ov-price">$77,063.99</div>
+          <div><span class="down">-0.48%</span> 日内</div></div>
+        <div class="ov-item"><div class="ov-label">ETH</div>
+          <div class="ov-price">$2,400.91</div>
+          <div><span class="down">-0.73%</span> 日内</div></div>
+        <div class="ov-item"><div class="ov-label">市场偏性(BTC+ETH)</div>
+          <div class="ov-bias bear">偏空</div></div>
+        <div class="ov-item"><div class="ov-label">全市场24h成交额</div>
+          <div class="ov-price">$4.0B</div></div>
+        <div class="ov-item"><div class="ov-label">总币种数(日内)</div>
+          <div class="ov-price">289</div></div>
+        <div class="ov-item"><div class="ov-label">日内上涨</div>
+          <div class="ov-price up">67</div></div>
+        <div class="ov-item"><div class="ov-label">日内下跌</div>
+          <div class="ov-price down">212</div></div>
+        <div class="ov-item"><div class="ov-label">涨跌比(上涨/下跌)</div>
+          <div class="ov-price down">0.32</div></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>🔬 验证跟踪（体系改进待验证项，到期自动提醒）</h2>
+      <ul style="list-style:none;padding:0;margin:0"><li style="margin-bottom:6px"><span class="tag">🕐 待验证</span> <b>⑥ 出场参数 P0-B/C（锁利线抬高）+ P1-③ 保本标记 实盘验证（2026-08-31 落地）</b> <span class="muted">— 剩余 8 天，到期自动提醒</span></li><li style="margin-bottom:6px"><span class="tag">🕐 待验证</span> <b>⑦ 出场参数 P0-D（锁利位再抬高 lock_l3/tp1_lock_r_high 0.8→1.0）实盘验证（2026-08-31 落地）</b> <span class="muted">— 剩余 8 天，到期自动提醒</span></li><li style="margin-bottom:6px"><span class="tag">🕐 待验证</span> <b>⑧ 出场参数 P0-E（激进档 init_stop_mult=2.0 + 锁利1.2）实盘验证（2026-08-31 落地）</b> <span class="muted">— 剩余 8 天，到期自动提醒</span></li></ul>
+    </section>
+    <section class="card">
+      <h2>当日日内涨跌幅（UTC+0）</h2>
+      <div class="top5-grid">
+        <div class="top5-col">
+          <h3 class="up">🔥 涨幅 TOP5</h3>
+          <ul class="top5-list"><li><span class="sym">DEGO</span><span class="chg up">+85.66%</span></li><li><span class="sym">LA</span><span class="chg up">+16.78%</span></li><li><span class="sym">HEMI</span><span class="chg up">+12.32%</span></li><li><span class="sym">HOME</span><span class="chg up">+7.07%</span></li><li><span class="sym">MAGMA</span><span class="chg up">+6.58%</span></li></ul>
+        </div>
+        <div class="top5-col">
+          <h3 class="down">💧 跌幅 TOP5</h3>
+          <ul class="top5-list"><li><span class="sym">SC</span><span class="chg down">-13.52%</span></li><li><span class="sym">POND</span><span class="chg down">-12.61%</span></li><li><span class="sym">IKA</span><span class="chg down">-11.20%</span></li><li><span class="sym">PONS</span><span class="chg down">-7.23%</span></li><li><span class="sym">SKR</span><span class="chg down">-6.84%</span></li></ul>
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>⚠️ 异动榜（未推荐 · 跟踪验证中）</h2>
+      <div class="muted" style="margin-bottom:8px">当日涨幅居前但未进入推荐——标注原因并跨轮跟踪（首次异动时间/是否后转正），验证"涨得好的没推"是拦截合理还是推荐遗漏（2026-08-13）</div>
+      <ul class="top5-list"><li><span class="sym">DEGO</span><span class="chg up">+85.66%</span><span class="muted">09-02 10:08起跟踪</span><span class="muted">— 高位追高区(距低点+350%)</span></li><li><span class="sym">HEMI</span><span class="chg up">+12.32%</span><span class="muted">08-16 11:29起跟踪</span><span class="muted">— 未达推荐门槛</span></li><li><span class="sym">HOME</span><span class="chg up">+7.07%</span><span class="muted">08-14 10:08起跟踪</span><span class="muted">— 未达推荐门槛</span></li><li><span class="sym">MAGMA</span><span class="chg up">+6.58%</span><span class="muted">08-29 00:03起跟踪</span><span class="muted">— 未达推荐门槛</span></li></ul>
+    </section><h2 style="margin-top:4px">BTC / ETH 风向标（固定展示）</h2>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">锚</span>
+          <span class="sym">BTC</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-exh">🔴 动能耗尽</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/24 20:00</span>
+          
+        </div>
+        <div class="coin-stars"><span class="stars">★☆☆☆☆</span> <span class="score">14分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$77,064 <span class="chg"><span class="down">-0.48%</span></span></div>
+        <div class="dir-row"><span class="dir dir-flat">观望</span> <span class="muted">缠论趋势向下 · 缠论三卖 · 接近中枢下沿</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#888;border-color:#888" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 相对BTC +0.0pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag flat" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">〰️ 短线震荡<span class="muted">（近4h -0.4%）</span></span></div>
+        
+      
+      <div class="plan-row"><div class="muted">🔍 方向判断：<b>观望</b><span style="display:block;margin-top:3px">操作建议：暂不入场，等日线量价转多 + 缠论卖点压制解除后再评估 + 市场偏空·突破前不入场后再评估</span><span style="display:block;margin-top:3px">做空侧：1h 放量下跌或跌破关键支撑（近20日低点/中枢下沿）时可考虑做空</span></div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag flat" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价中性</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比0.71x</span>
+    <span class="tag">5日量比0.65x</span>
+    <span class="tag">日内-0.48%</span></div>
+    <ul class="vp-signals"></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:下跌</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line">三卖(跌破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$63,436</b></span>
+        <span class="chip-item">密集区 <b>$60,305 ~ $79,093</b></span>
+        <span class="chip-item">上方套牢 <b class="up">16.3%</b></span>
+        <span class="chip-item">下方获利 <b class="down">78.1%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$60,931</span><div class="chip-track"><div class="chip-bar" style="width:38%"></div></div><span class="chip-pct">6.6%</span></div><div class="chip-row"><span class="chip-price">$62,184</span><div class="chip-track"><div class="chip-bar" style="width:59%"></div></div><span class="chip-pct">10.2%</span></div><div class="chip-row"><span class="chip-price">$63,436</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">17.2%</span></div><div class="chip-row"><span class="chip-price">$64,689</span><div class="chip-track"><div class="chip-bar" style="width:92%"></div></div><span class="chip-pct">15.9%</span></div><div class="chip-row"><span class="chip-price">$65,941</span><div class="chip-track"><div class="chip-bar" style="width:38%"></div></div><span class="chip-pct">6.5%</span></div><div class="chip-row"><span class="chip-price">$77,214</span><div class="chip-track"><div class="chip-bar" style="width:32%"></div></div><span class="chip-pct">5.6%</span></div><div class="chip-row"><span class="chip-price">$78,466</span><div class="chip-track"><div class="chip-bar" style="width:33%"></div></div><span class="chip-pct">5.7%</span></div><div class="chip-row"><span class="chip-price">$79,719</span><div class="chip-track"><div class="chip-bar" style="width:28%"></div></div><span class="chip-pct">4.9%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 三卖(跌破回抽不回中枢)</li><li>价格跌破中枢下沿 78062</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li><a href="https://cointelegraph.com/markets/bitcoin-remains-flat-as-global-bond-bear-market-rages-on?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank">Bitcoin stays flat as global bond bear market rages on, pushing JGB to high</a> <span class="muted">[Cointelegraph]</span></li><li><a href="https://cointelegraph.com/magazine/does-bitcoins-rally-mean-we-havent-wasted-our-lives-in-crypto?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank">Does the Bitcoin rally mean we haven’t wasted our lives in crypto?</a> <span class="muted">[Cointelegraph]</span></li><li><a href="https://cointelegraph.com/markets/blackrock-bitcoin-etf-inflow-rebound?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank">BlackRock drives $217M Bitcoin ETF rebound as altcoin funds continue streaks</a> <span class="muted">[Cointelegraph]</span></li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">锚</span>
+          <span class="sym">ETH</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-exh">🔴 动能耗尽</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/24 20:00</span>
+          
+        </div>
+        <div class="coin-stars"><span class="stars">★☆☆☆☆</span> <span class="score">8分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$2,400.91 <span class="chg"><span class="down">-0.73%</span></span></div>
+        <div class="dir-row"><span class="dir dir-flat">观望</span> <span class="muted">温和放量(量比1.2x) · 缠论趋势向下 · 缠论三卖</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#888;border-color:#888" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 相对BTC -0.2pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag flat" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">〰️ 短线震荡<span class="muted">（近4h -0.7%）</span></span></div>
+        
+      
+      <div class="plan-row"><div class="muted">🔍 方向判断：<b>观望</b><span style="display:block;margin-top:3px">操作建议：暂不入场，等日线量价转多 + 缠论卖点压制解除后再评估 + 市场偏空·突破前不入场后再评估</span><span style="display:block;margin-top:3px">做空侧：1h 放量下跌或跌破关键支撑（近20日低点/中枢下沿）时可考虑做空</span></div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag flat" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价中性</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比0.83x</span>
+    <span class="tag">5日量比0.72x</span>
+    <span class="tag">日内-0.73%</span></div>
+    <ul class="vp-signals"><li>温和放量(量比1.2x)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:下跌</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:有</span></div><div class="sig-line">一卖(趋势背驰) | 三卖(跌破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$1,903.5</b></span>
+        <span class="chip-item">密集区 <b>$1,558.7 ~ $2,354.4</b></span>
+        <span class="chip-item">上方套牢 <b class="up">10.5%</b></span>
+        <span class="chip-item">下方获利 <b class="down">85.5%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$1,585.2</span><div class="chip-track"><div class="chip-bar" style="width:49%"></div></div><span class="chip-pct">5.1%</span></div><div class="chip-row"><span class="chip-price">$1,638.3</span><div class="chip-track"><div class="chip-bar" style="width:54%"></div></div><span class="chip-pct">5.6%</span></div><div class="chip-row"><span class="chip-price">$1,691.3</span><div class="chip-track"><div class="chip-bar" style="width:69%"></div></div><span class="chip-pct">7.2%</span></div><div class="chip-row"><span class="chip-price">$1,744.4</span><div class="chip-track"><div class="chip-bar" style="width:81%"></div></div><span class="chip-pct">8.4%</span></div><div class="chip-row"><span class="chip-price">$1,797.4</span><div class="chip-track"><div class="chip-bar" style="width:68%"></div></div><span class="chip-pct">7.1%</span></div><div class="chip-row"><span class="chip-price">$1,850.5</span><div class="chip-track"><div class="chip-bar" style="width:92%"></div></div><span class="chip-pct">9.5%</span></div><div class="chip-row"><span class="chip-price">$1,903.5</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">10.4%</span></div><div class="chip-row"><span class="chip-price">$1,956.5</span><div class="chip-track"><div class="chip-bar" style="width:53%"></div></div><span class="chip-pct">5.5%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 一卖(趋势背驰)</li><li>缠论信号: 三卖(跌破回抽不回中枢)</li><li>缠论背驰: up向力度衰减</li><li>价格跌破中枢下沿 2477.4</li><li>量价: 温和放量(量比1.2x)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li><a href="https://cointelegraph.com/news/bitmine-ether-buying-streak-65-weeks-ethereum?utm_source=rss_feed&amp;utm_medium=rss&amp;utm_campaign=rss_partner_inbound" target="_blank">Bitmine now controls 4.9% of Ethereum supply after adding 53.5K ETH</a> <span class="muted">[Cointelegraph]</span></li><li><a href="https://decrypt.co/377126/robinhood-chain-dex-volume-jumps" target="_blank">Robinhood Chain DEX Volume Jumps to $1.6 billion</a> <span class="muted">[Decrypt]</span></li><li><a href="https://decrypt.co/376971/russia-sberbank-46-billion-crypto-trading-ethereum-usdt" target="_blank">Russia&#x27;s Sberbank Sees $46 Billion in Crypto Trading, Plans Ethereum and USDT-Backed Loans</a> <span class="muted">[Decrypt]</span></li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div><div class="muted" style="margin:8px 0 4px">较上轮推荐变化: <span style="color:#2E7D32">🆕 新增: BICO, EGLD, MIRA, T</span> | <span style="color:#B3261E">➖ 退出: ACE, BEL, VSN</span> | <span style="color:#666">🔁 维持: LA</span></div><h2 style="margin-top:4px">推荐交易信号（星级）</h2>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">1</span>
+          <span class="sym">BICO</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-bot">🚀 启动加速</span>
+          
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          <span class="rr-tag rr-high" title="TP2盈亏比=TP2空间/止损距离(真实入场价基准)：≥1.2R 让利润奔跑空间大，置信温和加成">✅ 盈亏比3.3R·加成</span>
+          
+          <span class="bias-warn-tag" title="2026-08-16 实证：萌芽/启动类低星集中在 偏空市场（市场置信0.85压低属正常机制），方向真实但需等回踩，bull 市场可给4-5星">🌫 市场偏空·启动类低星正常,等回踩</span>
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/06 23:01</span>
+          <span class="conf-tag conf-mid" title="方向置信度：量价×位置×市场偏性 统计正确率估计">中置信 52%</span><span class="conf-tag conf-mid" style="margin-left:4px" title="同类信号已结算实盈率（realized_r>0/已结算，近60天）">同类实盈70%(n=69 ·待积累71)</span>
+        </div>
+        <div class="coin-stars"><span class="stars">★★★★★</span> <span class="score">71分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$0.0229 <span class="chg"><span class="up">+3.90%</span></span></div>
+        <div class="dir-row"><span class="dir dir-long">做多</span> <span class="muted">温和放量(量比1.3x) · 巨量启动(量比4.3x) · 量价驱动做多(放量突破/量价齐升)</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#2E7D32;border-color:#2E7D32" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 跑赢BTC +4.4pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag flat" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">↘️ 短线回调<span class="muted">（近4h +3.9%）</span></span></div>
+        
+      <div class="entry-zone" title="精准入场区间：回踩低点挂单 / 突破高点确认">🎯 入场区间 <b>$0.0224328</b> ~ <b>$0.0224328</b><span class="muted">回踩低点挂单·突破高点确认</span></div>
+      <div class="plan-row">
+    <div class="plan-box">
+      <div class="plan-head">🎯 建议入场（回踩低点挂单 · 突破高点确认）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">区间低点(挂单)</span><span class="plan-val up">$0.0224328</span></div>
+        <div class="plan-item"><span class="plan-label">区间高点(确认)</span><span class="plan-val up">$0.0224328</span></div>
+        <div class="plan-item"><span class="plan-label">区间跨度</span><span class="plan-val">+0.00%</span></div>
+      </div>
+      <div class="plan-foot" style="margin-bottom:6px"><span class="muted">入场依据：最新共振位</span></div>
+      <div class="plan-head plan-head-stop">🛡 建议止损</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">止损价</span><span class="plan-val down">$0.0217599</span><span class="plan-sub">-3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">ATR(14)</span><span class="plan-val">0.00046786</span></div>
+        <div class="plan-item"><span class="plan-label">全仓风险</span><span class="plan-val">3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">风险预算</span><span class="plan-val" title="R=金额口径：1R = 仓位×杠杆 = 风险金额（100元×5倍=500元）。触止损亏金额 = 止损距离% × 仓位 × 杠杆。">1R = 500元</span><span class="plan-sub">触止损亏15.00元</span></div>
+      </div>
+      <div class="plan-head plan-head-tp">🎯 建议止盈（上方量价压力位+硬下限保护(v6·5%/10%/20%)）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">TP1</span><span class="plan-val up">$0.0235545</span><span class="plan-sub">+5.0%<span class="plan-sub-ok">✓可达</span></span></div>
+        <div class="plan-item"><span class="plan-label">TP2</span><span class="plan-val up">$0.0246761</span><span class="plan-sub">+10.0%</span></div>
+        <div class="plan-item"><span class="plan-label">TP3</span><span class="plan-val up">$0.0269194</span><span class="plan-sub">+20.0%</span></div>
+      </div>
+      <div class="plan-foot">
+        <span>盈亏比(确认入场): 1:3.3</span>
+        <span>建议仓位: 67%</span>
+        <span>风险/笔: $200 (2%)</span>
+        <span class="muted">止损=量价支撑+ATR缓冲; 止盈=量价压力位</span>
+      </div>
+      <div class="chip-note" title="筹码分布对交易计划的影响">💰 现价在筹码密集区内（$0.01124~$0.03093），下沿=真实支撑（止损参考）、上沿=压力（TP参考），距POC 7.9%</div>
+    </div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag up" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价偏多</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比1.27x</span>
+    <span class="tag">5日量比0.88x</span>
+    <span class="tag">日内+3.90%</span></div>
+    <ul class="vp-signals"><li>温和放量(量比1.3x)</li><li>巨量启动(量比4.3x)</li><li>量价齐升(放量上涨,趋势健康)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:上涨</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line">二买(底抬高确认)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$0.021085</b></span>
+        <span class="chip-item">密集区 <b>$0.01124 ~ $0.03093</b></span>
+        <span class="chip-item">上方套牢 <b class="up">58.4%</b></span>
+        <span class="chip-item">下方获利 <b class="down">23.0%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$0.013209</span><div class="chip-track"><div class="chip-bar" style="width:51%"></div></div><span class="chip-pct">9.5%</span></div><div class="chip-row"><span class="chip-price">$0.017147</span><div class="chip-track"><div class="chip-bar" style="width:73%"></div></div><span class="chip-pct">13.5%</span></div><div class="chip-row"><span class="chip-price">$0.021085</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">18.6%</span></div><div class="chip-row"><span class="chip-price">$0.025023</span><div class="chip-track"><div class="chip-bar" style="width:82%"></div></div><span class="chip-pct">15.3%</span></div><div class="chip-row"><span class="chip-price">$0.028961</span><div class="chip-track"><div class="chip-bar" style="width:50%"></div></div><span class="chip-pct">9.3%</span></div><div class="chip-row"><span class="chip-price">$0.032899</span><div class="chip-track"><div class="chip-bar" style="width:29%"></div></div><span class="chip-pct">5.3%</span></div><div class="chip-row"><span class="chip-price">$0.036837</span><div class="chip-track"><div class="chip-bar" style="width:24%"></div></div><span class="chip-pct">4.4%</span></div><div class="chip-row"><span class="chip-price">$0.040775</span><div class="chip-track"><div class="chip-bar" style="width:24%"></div></div><span class="chip-pct">4.4%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 二买(底抬高确认)</li><li>价格跌破中枢下沿 0.0268</li><li>量价: 温和放量(量比1.3x)</li><li>量价: 巨量启动(量比4.3x)</li><li>量价: 量价齐升(放量上涨,趋势健康)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li class="muted">无关键词覆盖新闻，见「⚡ 关键事件」（本地行情事件）</li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">2</span>
+          <span class="sym">LA</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-brk">🟡 中枢突破</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          <span class="rr-tag rr-high" title="TP2盈亏比=TP2空间/止损距离(真实入场价基准)：≥1.2R 让利润奔跑空间大，置信温和加成">✅ 盈亏比3.4R·加成</span>
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/18 09:52</span>
+          <span class="conf-tag conf-low" title="方向置信度：量价×位置×市场偏性 统计正确率估计">低置信 34%</span><span class="conf-tag conf-mid" style="margin-left:4px" title="同类信号已结算实盈率（realized_r>0/已结算，近60天）">同类实盈50%(n=204 ·待积累157)</span>
+        </div>
+        <div class="coin-stars"><span class="stars">★★☆☆☆</span> <span class="score">75分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$0.0675 <span class="chg"><span class="up">+16.78%</span></span></div>
+        <div class="dir-row"><span class="dir dir-long">做多</span> <span class="muted">巨量启动(量比5.0x) · 量价齐升(放量上涨,趋势健康) · 量价驱动做多(放量突破/量价齐升)</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#2E7D32;border-color:#2E7D32" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 跑赢BTC +17.3pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag up" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">📈 短线上涨<span class="muted">（近4h +17.2%）</span></span></div>
+        
+      <div class="entry-zone" title="精准入场区间：回踩低点挂单 / 突破高点确认">🎯 入场区间 <b>$0.065502</b> ~ <b>$0.0675</b><span class="muted">回踩低点挂单·突破高点确认</span></div>
+      <div class="plan-row">
+    <div class="plan-box">
+      <div class="plan-head">🎯 建议入场（回踩低点挂单 · 突破高点确认）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">区间低点(挂单)</span><span class="plan-val up">$0.065502</span></div>
+        <div class="plan-item"><span class="plan-label">区间高点(确认)</span><span class="plan-val up">$0.0675</span></div>
+        <div class="plan-item"><span class="plan-label">区间跨度</span><span class="plan-val">+3.05%</span></div>
+      </div>
+      <div class="plan-foot" style="margin-bottom:6px"><span class="muted">入场依据：最新共振位</span></div>
+      <div class="plan-head plan-head-stop">🛡 建议止损</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">止损价</span><span class="plan-val down">$0.0635369</span><span class="plan-sub">-3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">ATR(14)</span><span class="plan-val">0.002</span></div>
+        <div class="plan-item"><span class="plan-label">全仓风险</span><span class="plan-val">3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">风险预算</span><span class="plan-val" title="R=金额口径：1R = 仓位×杠杆 = 风险金额（100元×5倍=500元）。触止损亏金额 = 止损距离% × 仓位 × 杠杆。">1R = 500元</span><span class="plan-sub">触止损亏15.00元</span></div>
+      </div>
+      <div class="plan-head plan-head-tp">🎯 建议止盈（上方量价压力位+硬下限保护(v6·5%/10%/20%)）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">TP1</span><span class="plan-val up">$0.0687771</span><span class="plan-sub">+5.0%<span class="plan-sub-ok">✓可达</span></span></div>
+        <div class="plan-item"><span class="plan-label">TP2</span><span class="plan-val up">$0.0722127</span><span class="plan-sub">+10.2%</span></div>
+        <div class="plan-item"><span class="plan-label">TP3</span><span class="plan-val up">$0.0786024</span><span class="plan-sub">+20.0%</span></div>
+      </div>
+      <div class="plan-foot">
+        <span>盈亏比(确认入场): 1:3.4</span>
+        <span>建议仓位: 67%</span>
+        <span>风险/笔: $200 (2%)</span>
+        <span class="muted">止损=量价支撑+ATR缓冲; 止盈=量价压力位</span>
+      </div>
+      <div class="chip-note" title="筹码分布对交易计划的影响">💰 现价在筹码密集区内（$0.04974~$0.0715），下沿=真实支撑（止损参考）、上沿=压力（TP参考），距POC 14.2%</div>
+    </div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag up" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价偏多</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比5.0x</span>
+    <span class="tag">5日量比2.35x</span>
+    <span class="tag">日内+16.78%</span></div>
+    <ul class="vp-signals"><li>巨量启动(量比5.0x)</li><li>量价齐升(放量上涨,趋势健康)</li><li>真金白银(主动买盘55%偏离常态+7.4pp,资金实买确认)</li><li>放量(量比4.9x)</li><li>量价齐升(放量上涨,趋势健康)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:上涨</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line" title="5个同向分型比较 1/3/5 力度。大井(5>3,1)=一类买卖点；小井=二类买卖点">井论: 大井(底背离,一买)</div><div class="sig-line">大井(底背离,一买) | 三买(突破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$0.0579</b></span>
+        <span class="chip-item">密集区 <b>$0.04974 ~ $0.0715</b></span>
+        <span class="chip-item">上方套牢 <b class="up">29.3%</b></span>
+        <span class="chip-item">下方获利 <b class="down">57.4%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$0.04702</span><div class="chip-track"><div class="chip-bar" style="width:36%"></div></div><span class="chip-pct">6.9%</span></div><div class="chip-row"><span class="chip-price">$0.05246</span><div class="chip-track"><div class="chip-bar" style="width:85%"></div></div><span class="chip-pct">16.5%</span></div><div class="chip-row"><span class="chip-price">$0.0579</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">19.3%</span></div><div class="chip-row"><span class="chip-price">$0.06334</span><div class="chip-track"><div class="chip-bar" style="width:76%"></div></div><span class="chip-pct">14.7%</span></div><div class="chip-row"><span class="chip-price">$0.06878</span><div class="chip-track"><div class="chip-bar" style="width:69%"></div></div><span class="chip-pct">13.3%</span></div><div class="chip-row"><span class="chip-price">$0.07422</span><div class="chip-track"><div class="chip-bar" style="width:43%"></div></div><span class="chip-pct">8.3%</span></div><div class="chip-row"><span class="chip-price">$0.07966</span><div class="chip-track"><div class="chip-bar" style="width:26%"></div></div><span class="chip-pct">5.0%</span></div><div class="chip-row"><span class="chip-price">$0.1123</span><div class="chip-track"><div class="chip-bar" style="width:15%"></div></div><span class="chip-pct">2.8%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 大井(底背离,一买)</li><li>缠论信号: 三买(突破回抽不回中枢)</li><li>价格站上中枢上沿 0.0621</li><li>量价: 巨量启动(量比5.0x)</li><li>量价: 量价齐升(放量上涨,趋势健康)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li class="muted">无关键词覆盖新闻，见「⚡ 关键事件」（本地行情事件）</li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">3</span>
+          <span class="sym">MIRA</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-brk">🟡 中枢突破</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          <span class="rr-tag rr-high" title="TP2盈亏比=TP2空间/止损距离(真实入场价基准)：≥1.2R 让利润奔跑空间大，置信温和加成">✅ 盈亏比1.8R·加成</span>
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/26 11:12</span>
+          <span class="conf-tag conf-low" title="方向置信度：量价×位置×市场偏性 统计正确率估计">低置信 33%</span><span class="conf-tag conf-mid" style="margin-left:4px" title="同类信号已结算实盈率（realized_r>0/已结算，近60天）">同类实盈50%(n=204 ·待积累157)</span>
+        </div>
+        <div class="coin-stars"><span class="stars">★★☆☆☆</span> <span class="score">75分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$0.04528 <span class="chg"><span class="up">+5.52%</span></span></div>
+        <div class="dir-row"><span class="dir dir-long">做多</span> <span class="muted">巨量启动(量比5.0x) · 量价齐升(放量上涨,趋势健康) · 量价驱动做多(放量突破/量价齐升)</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#2E7D32;border-color:#2E7D32" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 跑赢BTC +6.0pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag flat" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">〰️ 短线震荡<span class="muted">（近4h +5.5%）</span></span></div>
+        
+      
+      <div class="plan-row">
+        <div class="plan-box">
+          <div class="plan-head">🎯 建议入场（回踩低点挂单 · 突破高点确认）</div>
+          <div class="plan-grid">
+            <div class="plan-item"><span class="plan-label">入场状态</span><span class="plan-val">⏳ 等回踩</span><span class="plan-val up">$0.0445012</span><span class="plan-sub">需回踩 1.7%（超距·不挂单·盯盘参考）</span></div>
+            <div class="plan-item"><span class="plan-label">浅回踩参考</span><span class="plan-val">$0.0443744</span><span class="plan-sub">需回踩 2.0%（若1h企稳可提前介入）</span></div>
+            <div class="plan-item"><span class="plan-label">现价</span><span class="plan-val">$0.04528</span></div>
+            <div class="plan-item"><span class="plan-label">回踩目标</span><span class="plan-val muted">$0.0445012</span></div>          </div>
+          <div class="plan-head plan-head-stop">🛡 建议止损（参考，等回踩到位后执行）</div>
+          <div class="plan-grid">
+            <div class="plan-item"><span class="plan-label">止损价</span><span class="plan-val down">$0.0431662</span><span class="plan-sub">-3.00%</span></div>
+            <div class="plan-item"><span class="plan-label">ATR(14)</span><span class="plan-val">0.00077786</span></div>
+            <div class="plan-item"><span class="plan-label">风险预算</span><span class="plan-val" title="R=金额口径：1R = 仓位×杠杆 = 风险金额（100元×5倍=500元）。触止损亏金额 = 止损距离% × 仓位 × 杠杆。">1R = 500元</span><span class="plan-sub">触止损亏15.00元</span></div>
+          </div>
+          
+        <div class="plan-head plan-head-tp">🎯 潜在止盈（上方量价压力位+硬下限保护(v6·5%/10%/20%)·回踩到位后参考）</div>
+        <div class="plan-grid"><div class="plan-item"><span class="plan-label">TP1(潜在)</span><span class="plan-val up">$0.0467262</span><span class="plan-sub">+5.0%</span></div><div class="plan-item"><span class="plan-label">TP2(潜在)</span><span class="plan-val up">$0.0491738</span><span class="plan-sub">+10.5%</span></div><div class="plan-item"><span class="plan-label">TP3(潜在)</span><span class="plan-val up">$0.0534014</span><span class="plan-sub">+20.0%</span></div></div>
+          <div class="plan-foot"><span class="muted">价格已远离真实支撑位（最近 $0.0445012），等回踩到位再入场，不追现价</span></div>
+          <div class="chip-note" title="筹码分布对交易计划的影响">💰 现价在筹码密集区上方（$0.044835），密集区成强支撑，下方获利盘 68.4%（回踩密集区上沿可加仓）</div>
+        </div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag up" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价偏多</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比5.0x</span>
+    <span class="tag">5日量比2.39x</span>
+    <span class="tag">日内+5.52%</span></div>
+    <ul class="vp-signals"><li>巨量启动(量比5.0x)</li><li>量价齐升(放量上涨,趋势健康)</li><li>真金白银(主动买盘54%偏离常态+4.6pp,资金实买确认)</li><li>巨量启动(量比4.5x)</li><li>⚠️ 放量冲高回落(量比4.5x,上影48%,短线见顶风险)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:上涨</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line">三买(突破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$0.040868</b></span>
+        <span class="chip-item">密集区 <b>$0.039545 ~ $0.044835</b></span>
+        <span class="chip-item">上方套牢 <b class="up">16.9%</b></span>
+        <span class="chip-item">下方获利 <b class="down">68.4%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$0.038222</span><div class="chip-track"><div class="chip-bar" style="width:15%"></div></div><span class="chip-pct">5.0%</span></div><div class="chip-row"><span class="chip-price">$0.040868</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">32.7%</span></div><div class="chip-row"><span class="chip-price">$0.043513</span><div class="chip-track"><div class="chip-bar" style="width:94%"></div></div><span class="chip-pct">30.7%</span></div><div class="chip-row"><span class="chip-price">$0.046158</span><div class="chip-track"><div class="chip-bar" style="width:45%"></div></div><span class="chip-pct">14.7%</span></div><div class="chip-row"><span class="chip-price">$0.048803</span><div class="chip-track"><div class="chip-bar" style="width:21%"></div></div><span class="chip-pct">7.0%</span></div><div class="chip-row"><span class="chip-price">$0.051448</span><div class="chip-track"><div class="chip-bar" style="width:8%"></div></div><span class="chip-pct">1.7%</span></div><div class="chip-row"><span class="chip-price">$0.054093</span><div class="chip-track"><div class="chip-bar" style="width:8%"></div></div><span class="chip-pct">1.8%</span></div><div class="chip-row"><span class="chip-price">$0.056738</span><div class="chip-track"><div class="chip-bar" style="width:8%"></div></div><span class="chip-pct">1.3%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 三买(突破回抽不回中枢)</li><li>价格站上中枢上沿 0.04131</li><li>量价: 巨量启动(量比5.0x)</li><li>量价: 量价齐升(放量上涨,趋势健康)</li><li>量价: 真金白银(主动买盘54%偏离常态+4.6pp,资金实买确认)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li class="muted">无关键词覆盖新闻，见「⚡ 关键事件」（本地行情事件）</li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">4</span>
+          <span class="sym">T</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-brk">🟡 中枢突破</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          
+          
+          
+          <span class="rr-tag rr-high" title="TP2盈亏比=TP2空间/止损距离(真实入场价基准)：≥1.2R 让利润奔跑空间大，置信温和加成">✅ 盈亏比3.5R·加成</span>
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/09/02 09:07</span>
+          <span class="conf-tag conf-low" title="方向置信度：量价×位置×市场偏性 统计正确率估计">低置信 32%</span><span class="conf-tag conf-mid" style="margin-left:4px" title="同类信号已结算实盈率（realized_r>0/已结算，近60天）">同类实盈50%(n=204 ·待积累157)</span>
+        </div>
+        <div class="coin-stars"><span class="stars">★★☆☆☆</span> <span class="score">75分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$0.00371 <span class="chg"><span class="up">+2.49%</span></span></div>
+        <div class="dir-row"><span class="dir dir-long">做多</span> <span class="muted">巨量启动(量比5.0x) · 量价齐升(放量上涨,趋势健康) · 量价驱动做多(放量突破/量价齐升)</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#2E7D32;border-color:#2E7D32" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 跑赢BTC +3.0pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag up" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">📈 短线上涨<span class="muted">（近4h +2.5%）</span></span></div>
+        
+      <div class="entry-zone" title="精准入场区间：回踩低点挂单 / 突破高点确认">🎯 入场区间 <b>$0.00367216</b> ~ <b>$0.00371</b><span class="muted">回踩低点挂单·突破高点确认</span></div>
+      <div class="plan-row">
+    <div class="plan-box">
+      <div class="plan-head">🎯 建议入场（回踩低点挂单 · 突破高点确认）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">区间低点(挂单)</span><span class="plan-val up">$0.00367216</span></div>
+        <div class="plan-item"><span class="plan-label">区间高点(确认)</span><span class="plan-val up">$0.00371</span></div>
+        <div class="plan-item"><span class="plan-label">区间跨度</span><span class="plan-val">+1.03%</span></div>
+      </div>
+      <div class="plan-foot" style="margin-bottom:6px"><span class="muted">入场依据：最新共振位</span></div>
+      <div class="plan-head plan-head-stop">🛡 建议止损</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">止损价</span><span class="plan-val down">$0.00356199</span><span class="plan-sub">-3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">ATR(14)</span><span class="plan-val">3.786e-05</span></div>
+        <div class="plan-item"><span class="plan-label">全仓风险</span><span class="plan-val">3.00%</span></div>
+        <div class="plan-item"><span class="plan-label">风险预算</span><span class="plan-val" title="R=金额口径：1R = 仓位×杠杆 = 风险金额（100元×5倍=500元）。触止损亏金额 = 止损距离% × 仓位 × 杠杆。">1R = 500元</span><span class="plan-sub">触止损亏15.00元</span></div>
+      </div>
+      <div class="plan-head plan-head-tp">🎯 建议止盈（上方量价压力位+硬下限保护(v6·5%/10%/20%)）</div>
+      <div class="plan-grid">
+        <div class="plan-item"><span class="plan-label">TP1</span><span class="plan-val up">$0.00385577</span><span class="plan-sub">+5.0%<span class="plan-sub-ok">✓可达</span></span></div>
+        <div class="plan-item"><span class="plan-label">TP2</span><span class="plan-val up">$0.00405773</span><span class="plan-sub">+10.5%</span></div>
+        <div class="plan-item"><span class="plan-label">TP3</span><span class="plan-val up">$0.00440659</span><span class="plan-sub">+20.0%</span></div>
+      </div>
+      <div class="plan-foot">
+        <span>盈亏比(确认入场): 1:3.5</span>
+        <span>建议仓位: 67%</span>
+        <span>风险/笔: $200 (2%)</span>
+        <span class="muted">止损=量价支撑+ATR缓冲; 止盈=量价压力位</span>
+      </div>
+      <div class="chip-note" title="筹码分布对交易计划的影响">💰 现价在筹码密集区内（$0.003318~$0.00483），下沿=真实支撑（止损参考）、上沿=压力（TP参考），距POC 3.8%</div>
+    </div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag up" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价偏多</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比5.0x</span>
+    <span class="tag">5日量比2.72x</span>
+    <span class="tag">日内+2.49%</span></div>
+    <ul class="vp-signals"><li>巨量启动(量比5.0x)</li><li>量价齐升(放量上涨,趋势健康)</li><li>真金白银(主动买盘67%偏离常态+21.1pp,资金实买确认)</li><li>温和放量(量比1.2x)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:上涨</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line">三买(突破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$0.00357</b></span>
+        <span class="chip-item">密集区 <b>$0.003318 ~ $0.00483</b></span>
+        <span class="chip-item">上方套牢 <b class="up">59.4%</b></span>
+        <span class="chip-item">下方获利 <b class="down">27.4%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$0.003402</span><div class="chip-track"><div class="chip-bar" style="width:73%"></div></div><span class="chip-pct">10.4%</span></div><div class="chip-row"><span class="chip-price">$0.00357</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">14.1%</span></div><div class="chip-row"><span class="chip-price">$0.003738</span><div class="chip-track"><div class="chip-bar" style="width:93%"></div></div><span class="chip-pct">13.2%</span></div><div class="chip-row"><span class="chip-price">$0.003906</span><div class="chip-track"><div class="chip-bar" style="width:79%"></div></div><span class="chip-pct">11.2%</span></div><div class="chip-row"><span class="chip-price">$0.004074</span><div class="chip-track"><div class="chip-bar" style="width:40%"></div></div><span class="chip-pct">5.7%</span></div><div class="chip-row"><span class="chip-price">$0.004242</span><div class="chip-track"><div class="chip-bar" style="width:37%"></div></div><span class="chip-pct">5.2%</span></div><div class="chip-row"><span class="chip-price">$0.004578</span><div class="chip-track"><div class="chip-bar" style="width:35%"></div></div><span class="chip-pct">4.9%</span></div><div class="chip-row"><span class="chip-price">$0.004746</span><div class="chip-track"><div class="chip-bar" style="width:37%"></div></div><span class="chip-pct">5.2%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 三买(突破回抽不回中枢)</li><li>价格站上中枢上沿 0.00359</li><li>量价: 巨量启动(量比5.0x)</li><li>量价: 量价齐升(放量上涨,趋势健康)</li><li>量价: 真金白银(主动买盘67%偏离常态+21.1pp,资金实买确认)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li class="muted">无关键词覆盖新闻，见「⚡ 关键事件」（本地行情事件）</li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div>
+    <div class="coin-card">
+      <div class="coin-head">
+        <div class="coin-name">
+          <span class="rank">5</span>
+          <span class="sym">EGLD</span>
+          <span class="src">Binance</span>
+          <span class="sig-tag sig-brk">🟡 中枢突破</span>
+          <span class="pos-tag pos-low" title="距趋势低点涨幅位置区段（统计：低位45%胜率→高位34%）">低位</span>
+          <span class="pos-tag pos-low" title="日线收盘在20日均线上方=趋势向上（回测：上方信号 avgR+0.161 vs 下方-0.112）">📈 日线20MA上方</span>
+          <span class="runaway-tag" title="近3根4h K线破前20高后收回=流动性猎取/假突破（大样本40币1年：breakout+sweep 72h中位+2.2%优于无sweep+0.6%，洗盘确认已加成；其余类型中性）">🔄 流动性猎取</span>
+          
+          <span class="runaway-tag" title="单边持续上涨高位风险：10/20日累计涨幅超市场P90，波动与回撤风险大（统计：单边大涨组亏损深度更大）">⚠️ 单边上涨 10日+14% 20日+55%</span>
+          <span class="rr-tag rr-high" title="TP2盈亏比=TP2空间/止损距离(真实入场价基准)：≥1.2R 让利润奔跑空间大，置信温和加成">✅ 盈亏比2.0R·加成</span>
+          
+          
+          <span class="sig-time" title="该币信号首次出现时间（跟踪层：挂单超24h自动失效、方向反转自动取消）">🕐 2026/08/18 08:07</span>
+          <span class="conf-tag conf-low" title="方向置信度：量价×位置×市场偏性 统计正确率估计">低置信 34%</span><span class="conf-tag conf-mid" style="margin-left:4px" title="同类信号已结算实盈率（realized_r>0/已结算，近60天）">同类实盈50%(n=204 ·待积累157)</span>
+        </div>
+        <div class="coin-stars"><span class="stars">★★☆☆☆</span> <span class="score">68分</span></div>
+      </div>
+        <div class="coin-top">
+        <div class="coin-price">$4.058 <span class="chg"><span class="up">+1.02%</span></span></div>
+        <div class="dir-row"><span class="dir dir-long">做多</span> <span class="muted">温和放量(量比1.2x) · 巨量启动(量比2.3x) · 量价驱动做多(放量突破/量价齐升)</span></div>
+        </div>
+        <div style="margin:4px 0;font-size:12px"><span class="tag" style="color:#888;border-color:#888" title="币当日涨幅 − BTC当日涨幅（pp）。仅展示相对强弱，不参与评分——回测：BTC涨日跑输币在BTC回调时并不补跌更狠">⚖️ 相对BTC +1.5pp</span></div>
+        <div class="short-phase" style="margin-top:4px;font-size:12px"><span class="tag flat" title="近4根1小时K线的短线阶段（用户关注15分钟形态）">〰️ 短线震荡<span class="muted">（近4h +1.0%）</span></span></div>
+        
+      
+      <div class="plan-row">
+        <div class="plan-box">
+          <div class="plan-head">🎯 建议入场（回踩低点挂单 · 突破高点确认）</div>
+          <div class="plan-grid">
+            <div class="plan-item"><span class="plan-label">入场状态</span><span class="plan-val">⏳ 等回踩</span><span class="plan-val up">$3.99754</span><span class="plan-sub">需回踩 1.5%（超距·不挂单·盯盘参考）</span></div>
+            <div class="plan-item"><span class="plan-label">浅回踩参考</span><span class="plan-val">$3.97684</span><span class="plan-sub">需回踩 2.0%（若1h企稳可提前介入）</span></div>
+            <div class="plan-item"><span class="plan-label">现价</span><span class="plan-val">$4.058</span></div>
+            <div class="plan-item"><span class="plan-label">回踩目标</span><span class="plan-val muted">$3.99754</span></div>          </div>
+          <div class="plan-head plan-head-stop">🛡 建议止损（参考，等回踩到位后执行）</div>
+          <div class="plan-grid">
+            <div class="plan-item"><span class="plan-label">止损价</span><span class="plan-val down">$3.87761</span><span class="plan-sub">-3.00%</span></div>
+            <div class="plan-item"><span class="plan-label">ATR(14)</span><span class="plan-val">0.0603571</span></div>
+            <div class="plan-item"><span class="plan-label">风险预算</span><span class="plan-val" title="R=金额口径：1R = 仓位×杠杆 = 风险金额（100元×5倍=500元）。触止损亏金额 = 止损距离% × 仓位 × 杠杆。">1R = 500元</span><span class="plan-sub">触止损亏15.00元</span></div>
+          </div>
+          
+        <div class="plan-head plan-head-tp">🎯 潜在止盈（上方量价压力位+硬下限保护(v6·5%/10%/20%)·回踩到位后参考）</div>
+        <div class="plan-grid"><div class="plan-item"><span class="plan-label">TP1(潜在)</span><span class="plan-val up">$4.19741</span><span class="plan-sub">+5.0%</span></div><div class="plan-item"><span class="plan-label">TP2(潜在)</span><span class="plan-val up">$4.41728</span><span class="plan-sub">+10.5%</span></div><div class="plan-item"><span class="plan-label">TP3(潜在)</span><span class="plan-val up">$4.79704</span><span class="plan-sub">+20.0%</span></div></div>
+          <div class="plan-foot"><span class="muted">价格已远离真实支撑位（最近 $3.99754），等回踩到位再入场，不追现价</span></div>
+          <div class="chip-note" title="筹码分布对交易计划的影响">💰 现价在筹码密集区上方（$3.432），密集区成强支撑，下方获利盘 83.7%（回踩密集区上沿可加仓）</div>
+        </div></div>
+      <details class="coin-analysis">
+        <summary>📐 分析详情（量价 + 缠论 + 筹码 + 事件）</summary>
+        <div class="coin-analysis-grid">
+          <div class="vp-box">
+    <div class="tag-line"><span class="tag up" title="量价方向是主驱动信号：量价齐升/放量突破→偏多；放量下跌/顶部背离→偏空">量价偏多</span>
+    <span class="tag" title="当前成交量 / 近20日均量。>1.5放量(资金涌入)，<0.8缩量(观望)">量比1.19x</span>
+    <span class="tag">5日量比1.3x</span>
+    <span class="tag">日内+1.02%</span></div>
+    <ul class="vp-signals"><li>温和放量(量比1.2x)</li><li>巨量启动(量比2.3x)</li><li>真金白银(主动买盘53%偏离常态+2.2pp,资金实买确认)</li></ul></div>
+          <div class="chan-box"><div class="tag-line"><span class="tag" title="缠论走势类型：上涨趋势(中枢上移) / 下跌趋势(中枢下移) / 盘整(中枢内震荡)">趋势:上涨</span><span class="tag" title="趋势末端力度衰竭：MACD柱子面积缩小但价格创新高/低。背驰 = 转折信号">背驰:无</span></div><div class="sig-line">三买(突破回抽不回中枢)</div></div>
+        </div>
+        <h4 style="margin:8px 0 4px;color:var(--muted);font-size:12px">💰 筹码分布（长期资金成本区）</h4>
+        
+    <div class="chip-box">
+      <div class="chip-meta">
+        <span class="chip-item">POC 筹码峰值 <b>$2.8628</b></span>
+        <span class="chip-item">密集区 <b>$2.5465 ~ $3.432</b></span>
+        <span class="chip-item">上方套牢 <b class="up">13.1%</b></span>
+        <span class="chip-item">下方获利 <b class="down">83.7%</b></span>
+      </div>
+      <div class="chip-bars"><div class="chip-row"><span class="chip-price">$2.6098</span><div class="chip-track"><div class="chip-bar" style="width:79%"></div></div><span class="chip-pct">9.4%</span></div><div class="chip-row"><span class="chip-price">$2.7363</span><div class="chip-track"><div class="chip-bar" style="width:88%"></div></div><span class="chip-pct">10.4%</span></div><div class="chip-row"><span class="chip-price">$2.8628</span><div class="chip-track"><div class="chip-bar chip-bar-poc" style="width:100%"></div></div><span class="chip-pct">11.8%</span></div><div class="chip-row"><span class="chip-price">$2.9893</span><div class="chip-track"><div class="chip-bar" style="width:72%"></div></div><span class="chip-pct">8.5%</span></div><div class="chip-row"><span class="chip-price">$3.1157</span><div class="chip-track"><div class="chip-bar" style="width:77%"></div></div><span class="chip-pct">9.1%</span></div><div class="chip-row"><span class="chip-price">$3.2422</span><div class="chip-track"><div class="chip-bar" style="width:71%"></div></div><span class="chip-pct">8.4%</span></div><div class="chip-row"><span class="chip-price">$3.3687</span><div class="chip-track"><div class="chip-bar" style="width:59%"></div></div><span class="chip-pct">6.9%</span></div><div class="chip-row"><span class="chip-price">$3.4952</span><div class="chip-track"><div class="chip-bar" style="width:51%"></div></div><span class="chip-pct">6.1%</span></div></div>
+      <div class="muted">筹码分布按近120日日线K线成交量构建（Volume Profile 近似），条宽=该价位筹码占比</div>
+    </div>
+        <div class="news-block" style="margin-top:8px">
+          <h4>⚡ 关键事件</h4>
+          <ul><li>缠论信号: 三买(突破回抽不回中枢)</li><li>价格站上中枢上沿 3.582</li><li>量价: 温和放量(量比1.2x)</li><li>量价: 巨量启动(量比2.3x)</li><li>量价: 真金白银(主动买盘53%偏离常态+2.2pp,资金实买确认)</li></ul>
+        </div>
+      </details>
+      <details class="coin-more">
+        <summary>📰 新闻 / 🔓 解锁信息</summary>
+        <div class="news-block">
+          <ul><li class="muted">无关键词覆盖新闻，见「⚡ 关键事件」（本地行情事件）</li></ul>
+          <h4>🔓 解锁信息<span class="muted" style="font-weight:400;font-size:11px">（市场级解锁动态）</span></h4>
+          <ul><li class="muted">暂无解锁数据</li></ul>
+        </div>
+      </details>
+    </div><section class="card" style="border-left:3px solid #2E7D32;background:var(--bg-soft,var(--bg))"><h2 style="margin:0 0 4px">🚀 启动加速提醒（当日3-10%放量确认·大行情早期）</h2><div class="muted" style="margin-bottom:6px">启动中段放量确认（量比≥1.8x·非高位）：方向已被市场验证，是萌芽(0-3%)与追高(>10%)之间最容易错过的早期段——回踩挂单可抓，不等涨完才看到（ACE 案例：+5%确认段被漏 → 错过 +103% 整段）。<b>已进推荐按推荐卡入场，观察中回踩 2% 挂单。</b></div><ul class="top5-list"><li style="margin-bottom:5px"><span class="sym" style="font-weight:500">BICO</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32;font-weight:500">🚀 启动加速</span><span class="chg up">+3.9%</span><span class="muted">启动中段放量确认·大行情早期·回踩挂单可抓</span></li></ul></section>
+    <section class="card" style="border-left:3px solid #2e7d32">
+      <h2 style="margin:0 0 4px">🌱 萌芽候选（推荐区，观察中）</h2>
+      <div class="muted" style="margin-bottom:6px">萌芽分=结构接近启动点的程度（位置+地量+筑底+首放量）。未确认不构成入场建议，萌芽分高者更值得盯；转正后自动进正式推荐（2026-08-09 重构，替代早期信号追踪板块）</div>
+      <ul class="top5-list"><li style="margin-bottom:6px"><span class="sym">FOGO</span><span class="tag" style="color:#EF9F27;border-color:#EF9F27">萌芽55</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+2.65%</span><span class="muted">已跟踪0h</span><span class="tag" style="color:#B3261E;border-color:#B3261E" title="方向置信度0.162&lt;0.30,统计胜率低,降观望">未转正</span><span class="muted" style="font-size:11px">置信度0.162&lt;0.30</span><span class="muted">— 趋势运行中</span></li><li style="margin-bottom:6px"><span class="sym">HOME</span><span class="tag" style="color:#888;border-color:#888">萌芽48</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+7.07%</span><span class="muted">刚发现</span><span class="muted">— 地量筑底后放量启动 | 距低点+29%</span></li><li style="margin-bottom:6px"><span class="sym">DEGO</span><span class="tag" style="color:#888;border-color:#888">萌芽45</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+85.66%</span><span class="muted">已跟踪0h</span><span class="tag" style="color:#B3261E;border-color:#B3261E" title="⚠️ 距低点+350%高位(&gt;=100%),高位风险(样本少,判断置信度低)">未转正</span><span class="muted" style="font-size:11px">⚠️ 距低点+350%高位(&gt;=100%),高位风险(样本少,判断置信度低)</span><span class="muted">— 趋势延续，注意追高风险</span></li><li style="margin-bottom:6px"><span class="sym">WAL</span><span class="tag" style="color:#888;border-color:#888">萌芽44</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+0.80%</span><span class="muted">刚发现</span><span class="tag" style="color:#B3261E;border-color:#B3261E" title="观望(bottom_reversal_downweight_0.5x)">未转正</span><span class="muted" style="font-size:11px">观望(bottom_reversal_downweight_0.5x)</span><span class="muted">— 地量筑底后放量启动 | 距低点+24%</span></li><li style="margin-bottom:6px"><span class="sym">ZIG</span><span class="tag" style="color:#888;border-color:#888">萌芽35</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+-0.20%</span><span class="muted">刚发现</span><span class="muted">— 强势趋势中健康缩量回调结束</span></li><li style="margin-bottom:6px"><span class="sym">DOS</span><span class="tag" style="color:#888;border-color:#888">萌芽35</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+1.39%</span><span class="muted">刚发现</span><span class="muted">— 1h放量萌芽启动(当日+1.4%,1h量比2.5x),方向真实等回踩</span></li><li style="margin-bottom:6px"><span class="sym">CASHCAT</span><span class="tag" style="color:#888;border-color:#888">萌芽32</span><span class="tag watch-stage">小时级启动</span><span class="chg up">+1.96%</span><span class="muted">已跟踪1d</span><span class="muted">— 放量突破中枢上沿(0.1905)</span></li></ul>
+    </section>
+    <details class="card">
+      <summary><h2 style="display:inline">🔍 拦截观察池（量价做多但未推荐，15个本轮 + 10个已放行 · 拦错率 <b>3/10</b>（被拦后上涨），点击展开）</h2></summary>
+      <div class="muted" style="margin-bottom:8px">本轮被纪律拦截的币（透支/爆量/高位/置信度不足）——看到但不推；"已放行"=历史拦过、本轮已不拦。"拦后±%"=被拦后走势验证（涨=拦错漏推、跌=拦对），拦截是否正确用数据说话（2026-08-13 方向验证）</div>
+      <ul class="top5-list"><li style="margin-bottom:6px"><span class="sym">DEGO</span><span class="chg" style="color:var(--up)">+85.7%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--down)" title="被拦后走势验证">拦后+0.0%</span><span class="muted">已拦截0h</span><span class="muted">— ⚠️ 距低点+350%高位(&gt;=100%),高位风险(样本少,判断置信度低)</span></li><li style="margin-bottom:6px"><span class="sym">HOME</span><span class="chg" style="color:var(--up)">+7.1%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="muted"></span><span class="muted">— 日线20MA下方逆势(🟢 底部反转,实证负期望:上方+0.29R/下方-0.18R),趋势过滤观望</span></li><li style="margin-bottom:6px"><span class="sym">MAGMA</span><span class="chg" style="color:var(--up)">+6.6%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--down)" title="被拦后走势验证">拦后-13.4%</span><span class="muted">已拦截3d</span><span class="muted">— 方向置信度0.281&lt;0.30,统计胜率低,降观望</span></li><li style="margin-bottom:6px"><span class="sym">UAI</span><span class="chg" style="color:var(--up)">+3.6%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--up)" title="被拦后走势验证">拦后+68.3%</span><span class="muted"></span><span class="muted">— 方向置信度0.082&lt;0.30,统计胜率低,降观望</span></li><li style="margin-bottom:6px"><span class="sym">PROM</span><span class="chg" style="color:var(--up)">+3.2%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="muted"></span><span class="muted">— ⚠️ 距低点+169%高位(&gt;=100%),高位风险(样本少,判断置信度低)</span></li><li style="margin-bottom:6px"><span class="sym">FOGO</span><span class="chg" style="color:var(--up)">+2.6%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--down)" title="被拦后走势验证">拦后-2.8%</span><span class="muted">已拦截4d</span><span class="muted">— 方向置信度0.162&lt;0.30,统计胜率低,降观望</span></li><li style="margin-bottom:6px"><span class="sym">SAND</span><span class="chg" style="color:var(--up)">+1.1%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--down)" title="被拦后走势验证">拦后-10.6%</span><span class="muted"></span><span class="muted">— 方向置信度0.189&lt;0.30,统计胜率低,降观望</span></li><li style="margin-bottom:6px"><span class="sym">WAL</span><span class="chg" style="color:var(--up)">+0.8%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--up)" title="被拦后走势验证">拦后+3.7%</span><span class="muted">已拦截2d</span><span class="muted">— 观望(bottom_reversal_downweight_0.5x)</span></li><li style="margin-bottom:6px"><span class="sym">TST</span><span class="chg" style="color:var(--up)">+0.2%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="muted"></span><span class="muted">— 方向置信度0.267&lt;0.30,统计胜率低,降观望</span></li><li style="margin-bottom:6px"><span class="sym">BICO</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">ERA</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">GUN</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">SAHARA</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">KAT</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">KITE</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">AKT</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">SKR</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">OGN</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">ES</span><span class="chg" style="color:var(--up)">+0.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">已放行</span><span class="muted"></span><span class="muted">— 历史拦过·本轮已放行（跟踪验证中）</span></li><li style="margin-bottom:6px"><span class="sym">HDG</span><span class="chg" style="color:var(--up)">+-0.1%</span><span class="tag" style="color:#B3261E;border-color:#B3261E">未推荐</span><span class="chg" style="color:var(--down)" title="被拦后走势验证">拦后+0.0%</span><span class="muted">已拦截0h</span><span class="muted">— 日线20MA下方逆势(🔵 缩量回调启动,实证负期望:上方+0.29R/下方-0.18R),趋势过滤观望</span></li></ul>
+    </details>
+    <details class="card">
+      <summary><h2 style="display:inline">📉 空头观察池（量价偏空，12个，点击展开）</h2></summary>
+      <div class="muted" style="margin-bottom:8px">量价方向做空（放量下跌/顶部背离）的币——体系不做空推荐，仅提示走弱风险，供你规避或反向参考（2026-08-08）</div>
+      <ul class="top5-list"><li style="margin-bottom:6px"><span class="sym">SC</span><span class="chg" style="color:var(--down)">-13.5%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点；缠论顶背驰；日内暴跌-14%(动能瓦解)；昨放量拉高出货后今日急跌</span></li><li style="margin-bottom:6px"><span class="sym">IKA</span><span class="chg" style="color:var(--down)">-11.2%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；顶部疲劳(前日放量冲高回落+今日缩量走弱)；缠论2卖点；日内暴跌-11%(动能瓦解)；昨放量拉高出货后今日急跌</span></li><li style="margin-bottom:6px"><span class="sym">SKR</span><span class="chg" style="color:var(--down)">-6.8%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；日内暴跌-7%(动能瓦解)</span></li><li style="margin-bottom:6px"><span class="sym">IQ</span><span class="chg" style="color:var(--down)">-5.7%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；顶部疲劳(前日放量冲高回落+今日缩量走弱)；缠论2卖点；日内暴跌-6%(动能瓦解)；昨放量拉高出货后今日急跌</span></li><li style="margin-bottom:6px"><span class="sym">PUMP</span><span class="chg" style="color:var(--down)">-5.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点；缠论顶背驰；日内暴跌-5%(动能瓦解)</span></li><li style="margin-bottom:6px"><span class="sym">0G</span><span class="chg" style="color:var(--down)">-4.7%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点；日内暴跌-5%(动能瓦解)</span></li><li style="margin-bottom:6px"><span class="sym">MLN</span><span class="chg" style="color:var(--down)">-4.6%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；顶部疲劳(前日放量冲高回落+今日缩量走弱)；冲高回落(长上影)；缠论3卖点；日内暴跌-5%(动能瓦解)；昨放量拉高出货后今日急跌</span></li><li style="margin-bottom:6px"><span class="sym">SOMI</span><span class="chg" style="color:var(--down)">-4.1%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点；日内暴跌-4%(动能瓦解)</span></li><li style="margin-bottom:6px"><span class="sym">ZK</span><span class="chg" style="color:var(--down)">-3.7%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点；缠论顶背驰</span></li><li style="margin-bottom:6px"><span class="sym">AR</span><span class="chg" style="color:var(--down)">-3.4%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点</span></li><li style="margin-bottom:6px"><span class="sym">STRK</span><span class="chg" style="color:var(--down)">-3.3%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论3卖点</span></li><li style="margin-bottom:6px"><span class="sym">ENS</span><span class="chg" style="color:var(--down)">-3.0%</span><span class="tag" style="color:#2E7D32;border-color:#2E7D32">量价偏空</span><span class="muted">— 量价偏空(放量下跌/顶部背离)；缠论2卖点</span></li></ul>
+    </details>
+    <details class="card perf">
+      <summary>📊 绩效统计板卡（R倍数口径 · 30日）<span class="muted" style="font-weight:400"> — 1R=500元（=仓位×杠杆·v5金额口径）| 有效信号 420 个（已平仓416 · 未平仓4） | 总体含浮动盈亏，请以「已平仓」口径为准</span><span class="muted" style="font-weight:400">｜系统历史异常记录 323 条已排除（bug堆积/误判批次/废弃机制，不计绩效）</span></summary>
+      <div class="muted" style="margin:8px 0;font-size:12px;background:rgba(255,152,0,.08);padding:6px 8px;border-radius:4px">💸 离场后跑路：已平仓信号离场后 24h 平均 +5.05%（n=391）/ 72h 平均 +5.33%（n=367）——🟡 提示（正值=砍早漏利润，铁律⑨ "让利润奔跑"）</div>
+      <div class="muted" style="margin:8px 0;font-size:12px;background:rgba(255,152,0,.08);padding:6px 8px;border-radius:4px">⚠️ 反转误杀指数：direction_reversal 离场后 72h 平均 +4.98%（n=50）——🟡 关注（TP1 保护已落地，残留样本>0 提示评估反转阈值是否需放宽）</div>
+      <div class="muted" style="margin:8px 0;font-size:12px;background:var(--bg);padding:6px 8px;border-radius:4px">📊 信号漏斗：同期发出 1343 推 → 跟踪 1343 → 已平仓 416（成交率 31.0%） → 已停止/未成交 777（57.9%） · pending 11——高 ended 率提示入场位/超时/反转判定需审视</div>
+      <div class="perf-grid">
+        <div class="perf-item"><div class="perf-num">420</div><div>有效信号（已平仓416/浮动4）</div></div>
+        <div class="perf-item"><div class="perf-num">56.2%</div><div>胜率(总体·含浮动)</div></div>
+        <div class="perf-item"><div class="perf-num up">+0.17R</div><div>平均盈亏(总体·含浮动)</div></div>
+        <div class="perf-item"><div class="perf-num">1.83</div><div>盈亏因子(总体·含浮动)</div></div>
+        <div class="perf-item"><div class="perf-num up">56.2%</div><div>已平仓胜率(416单·真实)</div></div>
+        <div class="perf-item"><div class="perf-num up">+0.17R</div><div>已平仓平均盈亏(真实)</div></div>
+        <div class="perf-item"><div class="perf-num up">+0.20R</div><div>已平仓中位盈亏(真实·典型单)</div></div>
+        <div class="perf-item"><div class="perf-num up">+15.14R</div><div>最佳单笔</div></div>
+        <div class="perf-item"><div class="perf-num down">-2.19R</div><div>最差单笔</div></div>
+        <div class="perf-item"><div class="perf-num up">93.6%</div><div>方向对过率(信号后朝方向走·核心能力)</div></div>
+        <div class="perf-item"><div class="perf-num">41%</div><div>利润集中度(top2日/正利润日)</div></div>
+        <div class="perf-item"><div class="perf-num up">+1041.59元</div><div>已平仓总金额(416单·v5金额口径)</div></div>
+      </div>
+      <div style="background:var(--warn-bg);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:13px"><b style="color:var(--warn-text)">⚠️ 绩效问题诊断（数据暴露 · 现象+动作）</b><ul style="margin:6px 0 0 0;padding-left:18px"><li style="margin-bottom:8px"><b>📌 现象：</b>⚡ 快速启动 平均 -1.00R（4单）——类型基准已按实证校准(08-14/08-16)<br><b style="color:var(--accent)">🎯 动作：</b>建议：查市场偏性交互——若横盘震荡下启动类折减 0.70 仍亏，需评估折减充分性（choppy 折减 0.70→0.60 待样本验证）</li><li style="margin-bottom:8px"><b>📌 现象：</b>横盘震荡市场 + 🌅早盘启动：平均 -0.53R（6单）<br><b style="color:var(--accent)">🎯 动作：</b>建议：choppy 启动类折减(0.70)+日线确认门槛已落地——若仍亏需评估折减充分性，或考虑该组合降级观察</li><li style="margin-bottom:8px"><b>📌 现象：</b>止盈触发率仅 46.4%（195/420 已入场）——大量信号&quot;方向对但赚不到&quot;：浮盈够不到 TP1 就被回撤扫损<br><b style="color:var(--accent)">🎯 动作：</b>建议：强趋势类(启动类+中枢突破)锁仓线已提至 0.6R(08-16回放+31%合计R)——观察兑现改善，2周后复查 TP1 触达率</li></ul></div>
+      <div class="muted" style="margin:8px 0;font-size:12px;background:rgba(255,152,0,.08);padding:6px 8px;border-radius:4px">🔧 历史口径修正：3 单（BERAUSDT、VIRTUALUSDT、PSGUSDT…）为 8/17-8/20 保护线bug TP1漏触发受害者（浮盈已够TP1却保本0R离场，2026-08-20 已修复）——已平仓 avgR +0.17R → 修复口径约 +0.18R，后续新单按正常 TP 机制执行</div>
+      <div class="perf-tables">
+        <table class="rsp-table"><thead><tr><th>方向</th><th>信号数</th><th>胜率</th><th>平均盈亏</th><th>盈亏因子</th></tr></thead>
+        <tbody><tr><td data-label="方向">做多</td><td data-label="信号数">420</td><td data-label="胜率">56.2%</td><td data-label="平均盈亏">+0.17R</td><td data-label="盈亏因子">1.83</td></tr></tbody></table>
+        <table class="rsp-table"><thead><tr><th>星级</th><th>信号数</th><th>胜率</th><th>平均盈亏</th><th>盈亏因子</th></tr></thead>
+        <tbody><tr><td data-label="星级">5星</td><td data-label="信号数">111</td><td data-label="胜率">64.0%</td><td data-label="平均盈亏">+0.24R</td><td data-label="盈亏因子">2.14</td></tr><tr><td data-label="星级">4星</td><td data-label="信号数">92</td><td data-label="胜率">50.0%</td><td data-label="平均盈亏">+0.09R</td><td data-label="盈亏因子">1.42</td></tr><tr><td data-label="星级">3星</td><td data-label="信号数">74</td><td data-label="胜率">52.7%</td><td data-label="平均盈亏">+0.13R</td><td data-label="盈亏因子">1.66</td></tr><tr><td data-label="星级">2星</td><td data-label="信号数">140</td><td data-label="胜率">57.1%</td><td data-label="平均盈亏">+0.19R</td><td data-label="盈亏因子">1.92</td></tr><tr><td data-label="星级">1星</td><td data-label="信号数">3</td><td data-label="胜率">0.0%</td><td data-label="平均盈亏">+0.00R</td><td data-label="盈亏因子">0</td></tr></tbody></table>
+      </div>
+      <div class="perf-tables" style="margin-top:10px"><table class="rsp-table"><thead><tr><th>信号类型（验证哪类信号有效）</th><th>信号数</th><th>胜率</th><th>平均盈亏</th><th>盈亏因子</th></tr></thead><tbody><tr><td data-label="信号类型">🟡 中枢突破</td><td data-label="信号数">186</td><td data-label="胜率">52.7%</td><td data-label="平均盈亏">+0.23R</td><td data-label="盈亏因子">2.13</td></tr><tr><td data-label="信号类型">🚀 启动加速</td><td data-label="信号数">69</td><td data-label="胜率">69.6%</td><td data-label="平均盈亏">+0.40R</td><td data-label="盈亏因子">3.69</td></tr><tr><td data-label="信号类型">🌅 早盘启动 <span class="runaway-tag" title="08-24 降级仅观察，决策逻辑全部移除，detector 保留观察用">🚫 已停用</span></td><td data-label="信号数">42</td><td data-label="胜率">35.7%</td><td data-label="平均盈亏">-0.25R</td><td data-label="盈亏因子">0.35</td></tr><tr><td data-label="信号类型">🌱 萌芽启动</td><td data-label="信号数">39</td><td data-label="胜率">51.3%</td><td data-label="平均盈亏">+0.03R</td><td data-label="盈亏因子">1.17</td></tr><tr><td data-label="信号类型">🟢 底部反转</td><td data-label="信号数">25</td><td data-label="胜率">64.0%</td><td data-label="平均盈亏">+0.17R</td><td data-label="盈亏因子">2.27</td></tr><tr><td data-label="信号类型">🔵 缩量回调启动</td><td data-label="信号数">24</td><td data-label="胜率">75.0%</td><td data-label="平均盈亏">+0.15R</td><td data-label="盈亏因子">1.94</td></tr><tr><td data-label="信号类型">🟣 缩量止跌</td><td data-label="信号数">18</td><td data-label="胜率">72.2%</td><td data-label="平均盈亏">+0.20R</td><td data-label="盈亏因子">2.18</td></tr><tr><td data-label="信号类型">⚪ 趋势延续</td><td data-label="信号数">13</td><td data-label="胜率">61.5%</td><td data-label="平均盈亏">+0.19R</td><td data-label="盈亏因子">99.0</td></tr><tr><td data-label="信号类型">⚡ 快速启动 <span class="watch-stage" title="样本量不足，需 ≥ 10 单才下结论（铁律②）">⏳ 样本积累中</span></td><td data-label="信号数">4</td><td data-label="胜率">0.0%</td><td data-label="平均盈亏">-1.00R</td><td data-label="盈亏因子">0.0</td></tr></tbody></table></div>
+      <div class="table-wrap" style="margin-top:10px"><table class="rsp-table"><thead><tr><th>数据源</th><th>信号数</th><th>胜率</th><th>平均盈亏</th><th>盈亏因子</th></tr></thead><tbody><tr><td data-label="数据源">Binance</td><td data-label="信号数">313</td><td data-label="胜率">56.9%</td><td data-label="平均盈亏">+0.22R</td><td data-label="盈亏因子">2.21</td></tr><tr><td data-label="数据源">Gate.io</td><td data-label="信号数">107</td><td data-label="胜率">54.2%</td><td data-label="平均盈亏">+0.02R</td><td data-label="盈亏因子">1.06</td></tr></tbody></table><div class="muted" style="margin-top:4px;font-size:12px">分源观察：Gate 小币流动性弱、样本少——若持续明显弱于 Binance 需评估是否提高 Gate 门槛/降权（当前 10 万门槛为 08-09 老板拍板保留）</div></div>
+      <div class="perf-tables" style="margin-top:10px"><div class="table-wrap"><table><thead><tr><th>市场偏性</th><th>🟡中枢突破</th><th>🚀启动加速</th><th>🌅早盘启动</th><th>🌱萌芽启动</th><th>🟢底部反转</th><th>🔵缩量回调启动</th><th>🟣缩量止跌</th><th>⚪趋势延续</th><th>⚡快速启动</th></tr></thead><tbody><tr><td><b>偏多</b></td><td>62个 <span class="up">+0.53R</span><br><span class="muted">54.8%胜</span></td><td>32个 <span class="up">+0.37R</span><br><span class="muted">68.8%胜</span></td><td>14个 <span class="down">-0.25R</span><br><span class="muted">42.9%胜</span></td><td>6个 <span class="up">+0.20R</span><br><span class="muted">66.7%胜</span></td><td>10个 <span class="up">+0.10R</span><br><span class="muted">70.0%胜</span></td><td>9个 <span class="up">+0.13R</span><br><span class="muted">77.8%胜</span></td><td>7个 <span class="up">+0.19R</span><br><span class="muted">71.4%胜</span></td><td>4个 <span class="up">+0.09R</span><br><span class="muted">50.0%胜</span></td><td>2个 <span class="down">-1.00R</span><br><span class="muted">0.0%胜</span></td></tr><tr><td><b>横盘震荡</b></td><td>59个 <span class="up">+0.18R</span><br><span class="muted">64.4%胜</span></td><td>7个 <span class="up">+1.07R</span><br><span class="muted">71.4%胜</span></td><td>6个 <span class="down">-0.53R</span><br><span class="muted">33.3%胜</span></td><td>5个 <span class="down">-0.25R</span><br><span class="muted">40.0%胜</span></td><td>8个 <span class="up">+0.06R</span><br><span class="muted">62.5%胜</span></td><td>8个 <span class="down">-0.05R</span><br><span class="muted">50.0%胜</span></td><td>6个 <span class="up">+0.22R</span><br><span class="muted">66.7%胜</span></td><td>3个 <span class="up">+0.39R</span><br><span class="muted">100.0%胜</span></td><td>1个 <span class="down">-1.00R</span><br><span class="muted">0.0%胜</span></td></tr><tr><td><b>中性</b></td><td>22个 <span class="down">-0.13R</span><br><span class="muted">40.9%胜</span></td><td>9个 <span class="up">+0.12R</span><br><span class="muted">55.6%胜</span></td><td>7个 <span class="down">-0.10R</span><br><span class="muted">28.6%胜</span></td><td>5个 <span class="up">+0.00R</span><br><span class="muted">40.0%胜</span></td><td>4个 <span class="up">+0.47R</span><br><span class="muted">75.0%胜</span></td><td>1个 <span class="up">+0.33R</span><br><span class="muted">100.0%胜</span></td><td>3个 <span class="up">+0.07R</span><br><span class="muted">66.7%胜</span></td><td>1个 <span class="up">+0.17R</span><br><span class="muted">100.0%胜</span></td><td class="muted">—</td></tr><tr><td><b>偏空</b></td><td>43个 <span class="up">+0.04R</span><br><span class="muted">39.5%胜</span></td><td>21个 <span class="up">+0.35R</span><br><span class="muted">76.2%胜</span></td><td>15个 <span class="down">-0.20R</span><br><span class="muted">33.3%胜</span></td><td>23个 <span class="up">+0.06R</span><br><span class="muted">52.2%胜</span></td><td>3个 <span class="up">+0.24R</span><br><span class="muted">33.3%胜</span></td><td>6个 <span class="up">+0.39R</span><br><span class="muted">100.0%胜</span></td><td>2个 <span class="up">+0.33R</span><br><span class="muted">100.0%胜</span></td><td>5个 <span class="up">+0.16R</span><br><span class="muted">40.0%胜</span></td><td>1个 <span class="down">-1.00R</span><br><span class="muted">0.0%胜</span></td></tr></tbody></table></div><div class="muted" style="margin-top:4px;font-size:12px">L6 实证校准：信号类型在哪种市场下有效（avg R / 胜率）</div></div>
+      
+    <div class="perf-tables" style="margin-top:10px;border-top:1px dashed var(--border-soft);padding-top:8px">
+      <div style="font-weight:600;margin-bottom:4px">🎯 入场有效性诊断（基于有效信号 · 数据暴露问题）</div>
+      <div class="muted" style="font-size:12px;margin-bottom:6px">当前待成交 11 · 问题信号 777（未成交/已取消）<span class="muted">｜系统历史异常记录 323 条已排除（bug堆积/误判批次/废弃机制，不计入统计）</span></div>
+      <div style="font-size:12px;margin-bottom:6px;padding:6px;background:var(--bg);border-radius:6px;border:1px solid var(--border-soft)">📊 机制生效追踪（近7天 vs 前7天）：<span class="down">成交率 30.0% <span class="muted">(前周35.4% ▼5.4)</span></span> ｜ <span class="down">反转 63 <span class="muted">(前周64 ▼1)</span></span> ｜ <span class="up">avgR 0.3R <span class="muted">(前周0.097R ▲0.2)</span></span></div>
+      <div class="muted" style="font-size:12px;margin-bottom:4px">📅 近3天新增（治本 双周期共振/入场甜点/超时6h 落地后应逐周下降）：未成交·超时未回踩·未成交 81 ｜ 已取消·方向反转·市价离场 6 ｜ 已取消·价格走远·未成交 1</div>
+      <ul style="margin:0 0 8px 0;background:var(--warn-bg);border-radius:6px;padding:8px 8px 8px 22px"><li style="margin-bottom:6px"><b style="color:var(--warn-text)">方向判断不稳定</b>（153个）<div class="muted" style="font-size:12px">→ 推荐方向在跟踪期内被市场反转——方向判定需更严（位置×量价共振门槛偏低，信号发出后易反转；无 08-16 改动，待 08-19 ⑤ 复评星级时联动）</div></li><li style="margin-bottom:6px"><b style="color:var(--warn-text)">入场位偏浅·接不住</b>（126个）<div class="muted" style="font-size:12px">→ 价格启动后挂单走远、回踩概率低——入场位已贴近最新支撑+按距POC收窄深度(08-16)；若仍偏高勿用追入通道（已回放否决 -0.41R），等回踩纪律保持</div></li><li style="margin-bottom:6px"><b style="color:var(--warn-text)">入场位偏深·追不上</b>（453个）<div class="muted" style="font-size:12px">→ 挂单超时未触达——入场深度已按入场深度上限自适应(1h波动,08-13)+贴筹码/深跌浅挂(08-16)收紧，持续观察成交率改善</div></li></ul>
+      <table class="rsp-table"><thead><tr><th>原因明细</th><th>数量</th></tr></thead><tbody><tr><td data-label="原因明细">未成交·超时未回踩·未成交</td><td data-label="数量">453</td></tr><tr><td data-label="原因明细">已取消·方向反转·市价离场</td><td data-label="数量">153</td></tr><tr><td data-label="原因明细">已取消·价格走远·未成交</td><td data-label="数量">120</td></tr><tr><td data-label="原因明细">未成交·价格走远·未成交</td><td data-label="数量">5</td></tr><tr><td data-label="原因明细">已取消·价格走远·未成交</td><td data-label="数量">1</td></tr></tbody></table>
+    </div>
+      
+    <div class="perf-item" style="margin-top:8px;background:rgba(255,235,59,.06);border-radius:6px;padding:8px">
+      <span class="muted">🧪 假设成交评估（未成交模拟）：</span><span style="font-weight:bold">32单</span><span style="color:var(--down)">方向正确率 34.4%</span><span style="color:var(--down);font-weight:bold">平均 -0.06R</span> <span class="muted">📐 方向验证（全量·含反转取消/未成交）：</span><span style="font-weight:bold">52单</span><span style="color:var(--up)">方向正确率 80.8%</span><span class="muted">（与实际成交胜率对比，差异=成交偏差/虚胖度）</span> <span class="muted">🔍 未成交后续走势（近120单）：</span><span style="font-weight:bold">27.5% 下跌</span><span style="color:var(--up);font-weight:bold">中位 +0.00%</span><span class="muted">（未成交=市场没给回踩买点，大部分是躲过追价而非错过行情）</span>
+    </div>
+    </details><details class="card">
+      <summary>🔄 信号长期跟踪（15持仓 + 10已平仓 + 20已停止/未成交）<span class="muted" style="font-weight:400"> — 1R=500元（=仓位×杠杆·v5金额口径）</span></summary>
+    <div style="font-weight:600;margin:8px 0 4px">⏱️ 持仓时长分布（<4h 砍仓率高胜率 / 中段震荡砍仓是亏损源）</div><div style="background:var(--bg);border:1px solid var(--border-soft);border-radius:6px;padding:8px 10px;margin-bottom:8px"><div class="chip-row" style="grid-template-columns:70px 1fr 110px;align-items:center;gap:6px;margin:2px 0"><span class="muted" style="font-size:12px">&lt;4h</span><span style="color:#1a7f37;font-family:monospace;font-size:12px" title="n=222 胜率68.9%">████████████████████</span><span style="font-size:11px;color:#1a7f37">n=222 胜率68.9% avgR+0.29R</span></div><div class="chip-row" style="grid-template-columns:70px 1fr 110px;align-items:center;gap:6px;margin:2px 0"><span class="muted" style="font-size:12px">4-12h</span><span style="color:#1a7f37;font-family:monospace;font-size:12px" title="n=89 胜率50.6%">████████</span><span style="font-size:11px;color:#1a7f37">n=89 胜率50.6% avgR+0.05R</span></div><div class="chip-row" style="grid-template-columns:70px 1fr 110px;align-items:center;gap:6px;margin:2px 0"><span class="muted" style="font-size:12px">12-24h</span><span style="color:#1a7f37;font-family:monospace;font-size:12px" title="n=63 胜率36.5%">██████</span><span style="font-size:11px;color:#1a7f37">n=63 胜率36.5% avgR+0.12R</span></div><div class="chip-row" style="grid-template-columns:70px 1fr 110px;align-items:center;gap:6px;margin:2px 0"><span class="muted" style="font-size:12px">24-48h</span><span style="color:#cf222e;font-family:monospace;font-size:12px" title="n=27 胜率33.3%">██</span><span style="font-size:11px;color:#cf222e">n=27 胜率33.3% avgR-0.20R ⚠️亏损源</span></div><div class="chip-row" style="grid-template-columns:70px 1fr 110px;align-items:center;gap:6px;margin:2px 0"><span class="muted" style="font-size:12px">&gt;48h</span><span style="color:#cf222e;font-family:monospace;font-size:12px" title="n=15 胜率26.7%">█</span><span style="font-size:11px;color:#cf222e">n=15 胜率26.7% avgR-0.02R ⚠️亏损源</span></div></div><div style="font-weight:600;margin:8px 0 4px">📈 持仓中（15）</div><div class="muted" style="font-size:11px;margin-bottom:6px">📐 <b>金额口径（2026-08-27 v2 老板修正）</b>：1R = 仓位×杠杆 = 风险金额 = 100元 × 5倍 = <b>500元</b>（固定）。实际盈亏金额 = 价格变动% × 仓位 × 杠杆（如 GENIUS -1.10% × 500元 = <b>-5.5元</b>）。盈亏(R) 保留历史 R 倍数口径；金额(元) 是真实资金变动。老单 amount_pnl 显示"—"为兼容历史业绩。</div><div class="table-wrap"><table class="rsp-table"><thead><tr><th>币种</th><th>方向</th><th>星级</th><th>入场价</th><th>最新/平仓价</th><th>盈亏(R/%)</th><th>金额(元)</th><th>TP进度/平仓原因</th><th>最大盈利</th><th>最大回撤</th><th>时间</th></tr></thead><tbody><tr><td data-label="币种">EGLD</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价">3.99754</td><td data-label="最新/平仓价">4.058</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-1.5%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 10:08:53</td></tr><tr><td data-label="币种">LA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价">0.065502</td><td data-label="最新/平仓价">0.0675</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-3.0%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 10:08:53</td></tr><tr><td data-label="币种">BICO</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0224328</td><td data-label="最新/平仓价">0.0229</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-2.0%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 10:08:53</td></tr><tr><td data-label="币种">BEL</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.118064</td><td data-label="最新/平仓价">0.1185</td><td data-label="盈亏"><span class="up">+0.37%</span></td><td data-label="金额(元)"><span class="up">+1.85</span></td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.37%</td><td data-label="最大回撤" class="down">-0.14%</td><td data-label="时间" class="muted">2026-09-02 09:21:37</td></tr><tr><td data-label="币种">ACE</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价"><span class="muted">超距等回踩</span></td><td data-label="最新/平仓价">0.2178</td><td data-label="盈亏"><span class="muted">待成交 超距·无挂单价(盯盘参考)</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:21:37</td></tr><tr><td data-label="币种">VSN</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价">0.0407241</td><td data-label="最新/平仓价">0.04115</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-1.7%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:21:37</td></tr><tr><td data-label="币种">TST</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价">0.0156923</td><td data-label="最新/平仓价">0.01584</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-1.4%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">TRB</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价"><span class="muted">超距等回踩</span></td><td data-label="最新/平仓价">16.53</td><td data-label="盈亏"><span class="muted">待成交 超距·无挂单价(盯盘参考)</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">PI</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.093177</td><td data-label="最新/平仓价">0.0928</td><td data-label="盈亏"><span class="down">-0.40%</span></td><td data-label="金额(元)"><span class="down">-2.00</span></td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">-0.42%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">MOVR</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.77551</td><td data-label="最新/平仓价">0.777</td><td data-label="盈亏"><span class="up">+0.19%</span></td><td data-label="金额(元)"><span class="up">+0.95</span></td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.19%</td><td data-label="最大回撤" class="down">-0.32%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">T</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价"><span class="muted">超距等回踩</span></td><td data-label="最新/平仓价">0.00371</td><td data-label="盈亏"><span class="muted">待成交 超距·无挂单价(盯盘参考)</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">SAGA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价">0.0144764</td><td data-label="最新/平仓价">0.01471</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-1.1%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">MAGMA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价"><span class="muted">超距等回踩</span></td><td data-label="最新/平仓价">0.46731</td><td data-label="盈亏"><span class="muted">待成交 超距·无挂单价(盯盘参考)</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">MIRA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0446342</td><td data-label="最新/平仓价">0.04528</td><td data-label="盈亏"><span class="muted">待成交 挂单距现价-1.7%</span></td><td data-label="金额(元)">—</td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+0.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-02 09:07:51</td></tr><tr><td data-label="币种">OFC</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.00902555</td><td data-label="最新/平仓价">0.008861</td><td data-label="盈亏"><span class="down">-1.82%</span></td><td data-label="金额(元)"><span class="down">-9.10</span></td><td data-label="TP进度">—</td><td data-label="最大盈利" class="up">+1.77%</td><td data-label="最大回撤" class="down">-2.58%</td><td data-label="时间" class="muted">2026-08-19 09:54:10</td></tr></tbody></table></div><div style="font-weight:600;margin:8px 0 4px">✅ 已平仓（10）</div><div class="table-wrap"><table class="rsp-table"><thead><tr><th>币种</th><th>方向</th><th>星级</th><th>入场价</th><th>最新/平仓价</th><th>盈亏(R/%)</th><th>金额(元)</th><th>TP进度/平仓原因</th><th>最大盈利</th><th>最大回撤</th><th>时间</th></tr></thead><tbody><tr class="closed-row"><td data-label="币种">SKHYNIXG</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">1223.03</td><td data-label="最新/平仓价">1190.59</td><td data-label="盈亏(R)" class="down">-0.88R</td><td data-label="金额(元)"><span class="down">-13.26</span></td><td data-label="平仓原因" class="muted">方向反转·市价离场</td><td data-label="最大盈利" class="up">+0.48%</td><td data-label="最大回撤" class="down">-0.61%</td><td data-label="时间" class="muted">2026-09-01 22:02:19</td></tr><tr class="closed-row"><td data-label="币种">ZBT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0840055</td><td data-label="最新/平仓价">0.0840055</td><td data-label="盈亏(R)" class="up">+0.00R</td><td data-label="金额(元)"><span class="up">+0.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+1.66%</td><td data-label="最大回撤" class="down">-2.03%</td><td data-label="时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="closed-row"><td data-label="币种">PLUME</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0146354</td><td data-label="最新/平仓价">0.0147671</td><td data-label="盈亏(R)" class="up">+0.30R</td><td data-label="金额(元)"><span class="up">+4.50</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+2.01%</td><td data-label="最大回撤" class="down">-0.58%</td><td data-label="时间" class="muted">2026-09-01 16:01:16</td></tr><tr class="closed-row"><td data-label="币种">CRV</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.350267</td><td data-label="最新/平仓价">0.35342</td><td data-label="盈亏(R)" class="up">+0.30R</td><td data-label="金额(元)"><span class="up">+4.50</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+2.06%</td><td data-label="最大回撤" class="down">-0.79%</td><td data-label="时间" class="muted">2026-09-01 16:01:16</td></tr><tr class="closed-row"><td data-label="币种">GMT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价">0.00725</td><td data-label="最新/平仓价">0.00725</td><td data-label="盈亏(R)" class="up">+0.00R</td><td data-label="金额(元)"><span class="up">+0.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+1.66%</td><td data-label="最大回撤" class="down">-0.28%</td><td data-label="时间" class="muted">2026-09-01 16:01:16</td></tr><tr class="closed-row"><td data-label="币种">PORTAL</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价">0.0142214</td><td data-label="最新/平仓价">0.0137948</td><td data-label="盈亏(R)" class="down">-1.00R</td><td data-label="金额(元)"><span class="down">-15.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+1.04%</td><td data-label="最大回撤" class="down">-3.53%</td><td data-label="时间" class="muted">2026-09-01 22:02:19</td></tr><tr class="closed-row"><td data-label="币种">TUT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.03</td><td data-label="最新/平仓价">0.03027</td><td data-label="盈亏(R)" class="up">+0.30R</td><td data-label="金额(元)"><span class="up">+4.50</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+5.00%</td><td data-label="最大回撤" class="down">+0.00%</td><td data-label="时间" class="muted">2026-09-01 16:01:16</td></tr><tr class="closed-row"><td data-label="币种">LINEA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.00257926</td><td data-label="最新/平仓价">0.00257926</td><td data-label="盈亏(R)" class="up">+0.00R</td><td data-label="金额(元)"><span class="up">+0.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+1.73%</td><td data-label="最大回撤" class="down">-0.75%</td><td data-label="时间" class="muted">2026-09-01 13:01:23</td></tr><tr class="closed-row"><td data-label="币种">CRO</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0565602</td><td data-label="最新/平仓价">0.0548634</td><td data-label="盈亏(R)" class="down">-1.00R</td><td data-label="金额(元)"><span class="down">-15.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+0.62%</td><td data-label="最大回撤" class="down">-3.94%</td><td data-label="时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="closed-row"><td data-label="币种">HUMA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价">0.0212092</td><td data-label="最新/平仓价">0.0212092</td><td data-label="盈亏(R)" class="up">+0.00R</td><td data-label="金额(元)"><span class="up">+0.00</span></td><td data-label="平仓原因" class="muted">止损平仓</td><td data-label="最大盈利" class="up">+2.17%</td><td data-label="最大回撤" class="down">-0.18%</td><td data-label="时间" class="muted">2026-09-01 13:01:23</td></tr></tbody></table></div><div style="font-weight:600;margin:8px 0 4px">⚠️ 已停止/未成交（20）· 记录保留供分析层，未实际成交不计绩效</div><div class="table-wrap"><table class="rsp-table"><thead><tr><th>币种</th><th>方向</th><th>星级</th><th>入场价</th><th>最新价</th><th>若现价追入</th><th>状态</th><th>信号时间</th><th>结束时间</th></tr></thead><tbody><tr class="ended-row"><td data-label="币种">LA</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.0639482</td><td data-label="最新价">0.0675</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+5.55%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">价格走远·未成交</td><td data-label="信号时间" class="muted">2026-09-02 09:21:37</td><td data-label="结束时间" class="muted">2026-09-02 10:08:52</td></tr><tr class="ended-row"><td data-label="币种">BTC</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">77603.9</td><td data-label="最新价">78017.4</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.53%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">ETH</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">2429.34</td><td data-label="最新价">2444.74</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.63%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">NEAR</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">1.98246</td><td data-label="最新价">2.019</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+1.84%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">TURBO</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.00094211</td><td data-label="最新价">0.000955</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+1.37%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">TWT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.535717</td><td data-label="最新价">0.5503</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+2.72%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">UNI</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">5.574</td><td data-label="最新价">5.704</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+2.33%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">TRB</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">16.7709</td><td data-label="最新价">16.93</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.95%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 23:02:57</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">APE</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.137914</td><td data-label="最新价">0.1382</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.21%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">SKY</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.0703219</td><td data-label="最新价">0.07193</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+2.29%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">FF</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.0969911</td><td data-label="最新价">0.10179</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+4.95%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">价格走远·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-01 23:02:52</td></tr><tr class="ended-row"><td data-label="币种">OP</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.0967666</td><td data-label="最新价">0.0999</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+3.24%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">TWT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★☆☆☆</span></td><td data-label="入场价">0.528175</td><td data-label="最新价">0.5503</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+4.19%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">价格走远·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-01 23:02:52</td></tr><tr class="ended-row"><td data-label="币种">IOST</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.00060564</td><td data-label="最新价">0.000606</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.06%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">CRV</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">0.35957</td><td data-label="最新价">0.3599</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.09%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">AR</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">2.20465</td><td data-label="最新价">2.266</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+2.78%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 22:02:24</td><td data-label="结束时间" class="muted">2026-09-02 09:07:48</td></tr><tr class="ended-row"><td data-label="币种">BTC</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价">78307.5</td><td data-label="最新价">78645.6</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.43%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 16:01:18</td><td data-label="结束时间" class="muted">2026-09-01 22:02:19</td></tr><tr class="ended-row"><td data-label="币种">ETH</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★☆☆</span></td><td data-label="入场价"><span class="muted">超距等回踩</span></td><td data-label="最新价">2473.16</td><td data-label="若现价追入" style="text-align:center"><span class="down" title="躲过追价(若按挂单位追入会亏)">+0.00%</span><br><span class="muted" style="font-size:11px">躲过追价(若按挂单位追入会亏)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 16:01:18</td><td data-label="结束时间" class="muted">2026-09-01 22:02:19</td></tr><tr class="ended-row"><td data-label="币种">TWT</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★☆</span></td><td data-label="入场价">0.5293</td><td data-label="最新价">0.54</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+2.02%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 16:01:18</td><td data-label="结束时间" class="muted">2026-09-01 22:02:19</td></tr><tr class="ended-row"><td data-label="币种">CFX</td><td data-label="方向"><span class="dir dir-long">做多</span></td><td data-label="星级"><span class="stars">★★★★★</span></td><td data-label="入场价">0.0466431</td><td data-label="最新价">0.0471</td><td data-label="若现价追入" style="text-align:center"><span class="up" title="错过(若按挂单位追入可赚)">+0.98%</span><br><span class="muted" style="font-size:11px">错过(若按挂单位追入可赚)</span></td><td data-label="状态" class="muted">超时未回踩·未成交</td><td data-label="信号时间" class="muted">2026-09-01 16:01:18</td><td data-label="结束时间" class="muted">2026-09-01 22:02:19</td></tr></tbody></table></div></details><footer>⚠️ 本报告由量价+缠论模型自动生成（量价驱动为主、缠论辅助确认），仅供参考，不构成投资建议。信号按UTC+0日内口径统计。术语悬停可看解释。</footer></body></html>
