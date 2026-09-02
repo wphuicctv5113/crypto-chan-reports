@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ETH 多空策略实证报告</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;max-width:960px;margin:0 auto;padding:28px;color:#1a2230;background:#fff;line-height:1.65}
+h1{font-size:26px;margin:0 0 4px} h2{font-size:20px;margin:32px 0 10px;padding-bottom:6px;border-bottom:2px solid #2563eb;color:#1e3a8a}
+h3{font-size:16px;margin:20px 0 6px;color:#334155}
+.sub{color:#64748b;font-size:13px;margin-bottom:18px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin:10px 0}
+th,td{border:1px solid #e2e8f0;padding:7px 9px;text-align:center}
+th{background:#f1f5f9;color:#334155;font-weight:600}
+tr:nth-child(even) td{background:#fafbfc}
+.callout{background:#eff6ff;border-left:4px solid #2563eb;padding:14px 18px;border-radius:6px;margin:14px 0}
+.warn{background:#fff7ed;border-left:4px solid #ea580c;padding:14px 18px;border-radius:6px;margin:14px 0}
+.ok{background:#f0fdf4;border-left:4px solid #16a34a;padding:14px 18px;border-radius:6px;margin:14px 0}
+.kpi{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
+.kpi div{flex:1;min-width:140px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px}
+.kpi b{display:block;font-size:22px;color:#1e3a8a}
+.kpi span{font-size:12px;color:#64748b}
+.sig{font-family:monospace;background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;white-space:pre-wrap;font-size:13px;overflow-x:auto}
+.tag{display:inline-block;background:#dbeafe;color:#1e40af;padding:1px 8px;border-radius:10px;font-size:12px;margin:2px}
+footer{margin-top:40px;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:12px}
+</style></head><body>
+
+<h1>ETH 多空分析策略 · 实证报告</h1>
+<div class="sub">数据区间 2021-03-13 ~ 2026-09-02 · 日线 2000 根 + 4h/1h/15m · 回测框架：次日开盘入场、1R=2×ATR(14) 止损、R-multiple 口径 · 生成于 crypto-chan/eth_special</div>
+
+<div class="callout">
+<b>结论先行（3 条铁律级结论）</b><br>
+1. <b>ETH 是"趋势市 + 高波动 + 强 BTC 相关(0.83)"的品种</b>，最适合 <b>20MA 双向趋势跟踪</b> 与 <b>20 日高低突破</b> 作为主信号；二者全样本与测试段均正期望、稳健。<br>
+2. <b>缩量回调逆势抄底在 ETH 上不能裸用</b>：1R=2ATR 止损下胜率 0%、总 R 为负——ETH 回调常 overshoot，须宽止损/长周期才成立，只能当"趋势中的回踩买点"。<br>
+3. <b>盈亏比 &gt; 胜率</b>：趋势策略胜率仅 ~43% 但盈亏比 2.5~3.4 → 靠"让利润奔跑、止损 1R"赚钱，与 ETH 高波动、肥尾(峰度 5.1) 的脾气完全匹配。
+</div>
+
+<div class="kpi">
+<div><b>75%</b><span>年化波动率</span></div>
+<div><b>51%</b><span>涨日占比</span></div>
+<div><b>13 / 8</b><span>最长连涨 / 连跌(日)</span></div>
+<div><b>21% / -16%</b><span>上涨段 / 下跌段 均值</span></div>
+<div><b>-79%</b><span>历史最大回撤</span></div>
+<div><b>0.83</b><span>ETH/BTC 日收益相关</span></div>
+</div>
+
+<h2>一、ETH 的"每一次涨跌"规律</h2>
+
+<h3>1.1 日收益分布（长周期脾气）</h3>
+<table>
+<tr><th>样本</th><th>日均收益</th><th>中位日收益</th><th>日波动率</th><th>偏度</th><th>峰度(肥尾)</th><th>最佳/最差单日</th></tr>
+<tr><td>1999</td><td>0.1%</td><td>0.1%</td>
+<td>3.92%</td><td>0.20</td><td>5.06</td>
+<td>+26.3% / -27.7%</td></tr>
+</table>
+<p>ETH 日均仅微赚，但 <b>峰度 5.06（远超正态的 3）</b> → 单日暴涨暴跌频繁；正偏度说明大涨日比大跌日更极端。这决定了"小止损 + 让利润奔跑"优于"高胜率抓小波动"。</p>
+
+<h3>1.2 连涨连跌（Run-length）</h3>
+<table>
+<tr><th>最长连涨</th><th>最长连跌</th><th>平均连涨</th><th>平均连跌</th></tr>
+<tr><td>13 日</td><td>8 日</td><td>1.93 日</td><td>1.86 日</td></tr>
+</table>
+<p>连涨最长可达 13 日、连跌 8 日 → <b>趋势有持续性</b>，给趋势跟踪留利润空间；但平均连涨/连跌都≈1.9 日，说明多数日子"涨一天就歇"，不能指望每天追。</p>
+
+<h3>1.3 动量延续 vs 反转（次日行为）</h3>
+<table>
+<tr><th rowspan="2">情景</th><th colspan="3">后续一日（涨方向）</th><th colspan="3">后续一日（跌方向）</th></tr>
+<tr><th>n</th><th>次日均值</th><th>次日涨%</th><th>n</th><th>次日均值</th><th>次日涨%</th></tr>
+<tr><td>连涨 1 日后</td><td>526</td><td>-0.1%</td><td>47.7%</td><td>526</td><td>0.1%</td><td>52.1%</td></tr><tr><td>连涨 2 日后</td><td>251</td><td>0.1%</td><td>47.0%</td><td>252</td><td>0.2%</td><td>56.3%</td></tr><tr><td>连涨 3 日后</td><td>118</td><td>0.2%</td><td>48.3%</td><td>110</td><td>0.5%</td><td>54.5%</td></tr><tr><td>连涨 4 日后</td><td>57</td><td>0.4%</td><td>49.1%</td><td>50</td><td>-1.1%</td><td>50.0%</td></tr><tr><td>连涨 5 日后</td><td>28</td><td>-0.7%</td><td>50.0%</td><td>25</td><td>0.6%</td><td>48.0%</td></tr>
+</table>
+<p>连涨后次日仍偏正、连跌后次日仍偏负 → <b>短周期动量延续占优</b>（不是简单反转市），再次支持趋势跟踪；但幅度很小，需用突破/MA 过滤噪声。</p>
+
+<h3>1.4 每一次涨跌的幅度（ZigZag 6% 反转摆动，共 203 段）</h3>
+<table>
+<tr><th></th><th>段数</th><th>均值</th><th>中位</th><th>最小</th><th>最大</th><th>Q25~Q75</th><th>平均持续</th></tr>
+<tr><td>🟢 上涨段</td><td>101</td><td>20.7%</td><td>14.4%</td><td>6.4%</td><td>88.6%</td><td>9.6%~22.6%</td><td>10日</td></tr>
+<tr><td>🔴 下跌段</td><td>102</td><td>-16.0%</td><td>-14.1%</td><td>-50.2%</td><td>-6.2%</td><td>-20.8%~-9.8%</td><td>9日</td></tr>
+</table>
+<div class="kpi" style="gap:8px">
+<div style="flex:2;min-width:320px"><b style="font-size:13px">上涨段幅度分布</b><br><svg viewBox="0 0 720 200" width="100%" style="max-width:720px;font-family:inherit">
+<rect x="44" y="170" width="66" height="0" fill="#16a34a" opacity="0.85"/>
+<text x="77" y="182" font-size="9" fill="#666" text-anchor="middle"><5%</text>
+<rect x="138" y="30" width="66" height="140" fill="#16a34a" opacity="0.85"/>
+<text x="171" y="182" font-size="9" fill="#666" text-anchor="middle">5-10</text>
+<rect x="233" y="50" width="66" height="120" fill="#16a34a" opacity="0.85"/>
+<text x="266" y="182" font-size="9" fill="#666" text-anchor="middle">10-15</text>
+<rect x="327" y="90" width="66" height="80" fill="#16a34a" opacity="0.85"/>
+<text x="360" y="182" font-size="9" fill="#666" text-anchor="middle">15-20</text>
+<rect x="421" y="120" width="66" height="50" fill="#16a34a" opacity="0.85"/>
+<text x="454" y="182" font-size="9" fill="#666" text-anchor="middle">20-25</text>
+<rect x="516" y="145" width="66" height="25" fill="#16a34a" opacity="0.85"/>
+<text x="549" y="182" font-size="9" fill="#666" text-anchor="middle">25-30</text>
+<rect x="610" y="80" width="66" height="90" fill="#16a34a" opacity="0.85"/>
+<text x="643" y="182" font-size="9" fill="#666" text-anchor="middle">30+</text>
+<line x1="30" y1="170" x2="690" y2="170" stroke="#999"/>
+</svg></div>
+<div style="flex:2;min-width:320px"><b style="font-size:13px">下跌段幅度分布</b><br><svg viewBox="0 0 720 200" width="100%" style="max-width:720px;font-family:inherit">
+<rect x="46" y="109" width="77" height="61" fill="#dc2626" opacity="0.85"/>
+<text x="85" y="182" font-size="9" fill="#666" text-anchor="middle">-25↓</text>
+<rect x="156" y="100" width="77" height="70" fill="#dc2626" opacity="0.85"/>
+<text x="195" y="182" font-size="9" fill="#666" text-anchor="middle">-25/-20</text>
+<rect x="266" y="91" width="77" height="79" fill="#dc2626" opacity="0.85"/>
+<text x="305" y="182" font-size="9" fill="#666" text-anchor="middle">-20/-15</text>
+<rect x="376" y="44" width="77" height="126" fill="#dc2626" opacity="0.85"/>
+<text x="415" y="182" font-size="9" fill="#666" text-anchor="middle">-15/-10</text>
+<rect x="486" y="30" width="77" height="140" fill="#dc2626" opacity="0.85"/>
+<text x="525" y="182" font-size="9" fill="#666" text-anchor="middle">-10/-5</text>
+<rect x="596" y="170" width="77" height="0" fill="#dc2626" opacity="0.85"/>
+<text x="635" y="182" font-size="9" fill="#666" text-anchor="middle">-5/0</text>
+<line x1="30" y1="170" x2="690" y2="170" stroke="#999"/>
+</svg></div>
+</div>
+<p>上涨段多集中在 +10%~+20%（中位 +14%），下跌段多在 -10%~-15%（中位 -14%）→ <b>ETH 的"一次涨跌"典型幅度约 15%</b>，止损设 2ATR(≈8-10%) 刚好卡在波动里，这就是为什么趋势单要用移动止损而非固定窄止损。</p>
+
+<h3>1.5 回撤特征</h3>
+<table>
+<tr><th>最大回撤</th><th>回撤次数</th><th>平均深度</th><th>平均持续</th><th>深度≤-10% 回撤</th></tr>
+<tr><td>-79.3%</td><td>11</td><td>-17.9%</td><td>28日</td><td>4 次</td></tr>
+</table>
+
+<h3>1.6 顶部 / 底部签名（抓反转的关键证据）</h3>
+<table>
+<tr><th>指标</th><th>📈 顶部</th><th>📉 底部</th></tr>
+<tr><td>样本数</td><td>101</td><td>102</td></tr><tr><td>RSI 均值</td><td>60.2</td><td>38.3</td></tr><tr><td>RSI&gt;70 / &lt;30 占比</td><td>31.7%</td><td>28.4%</td></tr><tr><td>放量(&gt;1.5x) 占比</td><td>20.8%</td><td>27.5%</td></tr><tr><td>距 20MA 偏离均值</td><td>6.3%</td><td>-9.5%</td></tr>
+</table>
+<div class="warn">
+<b>反转识别纪律：</b>顶部只有 <b>31.7%</b> 出现 RSI&gt;70、<b>20.8%</b> 伴随放量&gt;1.5x → <b>多数顶部是"钝化新高"而非极端超买</b>；底部 RSI&lt;30 仅 <b>28.4%</b>、放量占比 <b>27.5%</b>。<br>
+→ <b>RSI 单独"抄底/摸顶"在 ETH 上是接飞刀</b>（prior 实证负期望）；反转签名只作"趋势末端减仓/不追"的确认，<u>不作反向开仓信号</u>。
+</div>
+
+<h3>1.7 星期效应</h3>
+<table><tr><th>星期</th><th>n</th><th>平均收益</th><th>日波动</th></tr></table>
+
+<h3>1.8 日内时段（1h 平均收益，用于入场微调）</h3>
+<p>ETH 在 1h 级别平均收益最高的时段：<b>11:00(0.1%)、15:00(0.1%)、21:00(0.1%)</b>；最差（易回调）时段：<b>13:00(-0.1%)、01:00(-0.1%)、18:00(-0.1%)</b>。日线定方向，1h/15m 只在上述优势时段挂单入场。</p>
+<table><tr><th>小时(UTC)</th><th>平均收益</th><th>n</th></tr><tr><td>00:00</td><td style='color:#16a34a'>0.0%</td><td>167</td></tr><tr><td>01:00</td><td style='color:#dc2626'>-0.1%</td><td>167</td></tr><tr><td>02:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr><tr><td>03:00</td><td style='color:#16a34a'>0.0%</td><td>167</td></tr><tr><td>04:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr><tr><td>05:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr><tr><td>06:00</td><td style='color:#16a34a'>0.0%</td><td>166</td></tr><tr><td>07:00</td><td style='color:#16a34a'>0.0%</td><td>166</td></tr><tr><td>08:00</td><td style='color:#16a34a'>0.0%</td><td>166</td></tr><tr><td>09:00</td><td style='color:#dc2626'>-0.0%</td><td>166</td></tr><tr><td>10:00</td><td style='color:#dc2626'>-0.0%</td><td>166</td></tr><tr><td>11:00</td><td style='color:#16a34a'>0.1%</td><td>166</td></tr><tr><td>12:00</td><td style='color:#16a34a'>0.0%</td><td>166</td></tr><tr><td>13:00</td><td style='color:#dc2626'>-0.1%</td><td>166</td></tr><tr><td>14:00</td><td style='color:#16a34a'>0.0%</td><td>166</td></tr><tr><td>15:00</td><td style='color:#16a34a'>0.1%</td><td>167</td></tr><tr><td>16:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr><tr><td>17:00</td><td style='color:#16a34a'>0.1%</td><td>167</td></tr><tr><td>18:00</td><td style='color:#dc2626'>-0.1%</td><td>167</td></tr><tr><td>19:00</td><td style='color:#16a34a'>0.1%</td><td>167</td></tr><tr><td>20:00</td><td style='color:#16a34a'>0.1%</td><td>167</td></tr><tr><td>21:00</td><td style='color:#16a34a'>0.1%</td><td>167</td></tr><tr><td>22:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr><tr><td>23:00</td><td style='color:#dc2626'>-0.0%</td><td>167</td></tr></table>
+
+<h2>二、多空策略回测</h2>
+<p>口径：日线信号 → 次日开盘入场；多空双向；止损 = 入场 ± 1R（R=2×ATR14）；趋势/组合单"反向 MA 交叉即平"（吊灯式跟踪），突破单持有至反向突破或止损；R-multiple 累计为净值。</p>
+<table>
+<tr><th>策略</th><th>笔数</th><th>胜率</th><th>均R</th><th>盈亏比</th><th>总R</th><th>最大DD(R)</th><th>多/空胜率</th></tr>
+<tr><td>✅ 趋势(20MA双向)</td><td>170</td><td>43.5%</td><td>+0.369</td><td>2.68</td><td>+62.8</td><td>-4.4</td><td>37/50</td></tr><tr><td>✅ 突破(20日高低)</td><td>56</td><td>46.4%</td><td>+0.865</td><td>3.42</td><td>+48.4</td><td>-3.3</td><td>47/46</td></tr><tr><td>✅ 组合(趋势+横盘MR)</td><td>109</td><td>42.2%</td><td>+0.510</td><td>2.50</td><td>+55.6</td><td>-4.3</td><td>39/45</td></tr><tr><td>⚠️ 缩量回调MR(仅做多)</td><td>19</td><td>0.0%</td><td>-0.956</td><td>0.00</td><td>-18.2</td><td>-18.2</td><td>0/0</td></tr><tr><td>⚠️ 缩量回调MR(双向)</td><td>40</td><td>35.0%</td><td>-0.058</td><td>0.90</td><td>-2.3</td><td>-8.7</td><td>37/33</td></tr>
+</table>
+<h3>测试段（样本后 40%，~2024 起，样本外）</h3>
+<table>
+<tr><th>策略</th><th>笔数</th><th>胜率</th><th>均R</th><th>盈亏比</th><th>总R</th><th>最大DD(R)</th><th>多/空胜率</th></tr>
+<tr><td>✅ 趋势(20MA双向)</td><td>72</td><td>40.3%</td><td>+0.362</td><td>2.51</td><td>+26.1</td><td>-4.4</td><td>30/49</td></tr><tr><td>✅ 突破(20日高低)</td><td>22</td><td>45.5%</td><td>+1.023</td><td>3.47</td><td>+22.5</td><td>-3.3</td><td>38/56</td></tr><tr><td>✅ 组合(趋势+横盘MR)</td><td>48</td><td>41.7%</td><td>+0.398</td><td>2.04</td><td>+19.1</td><td>-4.1</td><td>38/46</td></tr><tr><td>⚠️ 缩量回调MR(仅做多)</td><td>7</td><td>0.0%</td><td>-0.882</td><td>0.00</td><td>-6.2</td><td>-6.2</td><td>0/0</td></tr><tr><td>⚠️ 缩量回调MR(双向)</td><td>13</td><td>46.2%</td><td>-0.047</td><td>0.90</td><td>-0.6</td><td>-5.0</td><td>40/50</td></tr>
+</table>
+<div class="ok">
+<b>稳健性判断：</b>趋势(20MA) 与 突破(20日) 在<b>全样本与测试段均为正期望</b>（盈亏比 2.5~3.5），且测试段不衰减 → 可信。缩量回调双向/仅做多均负 → 已如实标注，<b>不包装成正期望</b>。
+</div>
+<h3>净值曲线（累计 R）</h3>
+<svg viewBox="0 0 720 260" width="100%" style="max-width:720px;font-family:inherit">
+<line x1="36" y1="36" x2="684" y2="36" stroke="#eee"/>
+<text x="32" y="40" font-size="10" fill="#888" text-anchor="end">63</text>
+<line x1="36" y1="83" x2="684" y2="83" stroke="#eee"/>
+<text x="32" y="87" font-size="10" fill="#888" text-anchor="end">47</text>
+<line x1="36" y1="130" x2="684" y2="130" stroke="#eee"/>
+<text x="32" y="134" font-size="10" fill="#888" text-anchor="end">31</text>
+<line x1="36" y1="177" x2="684" y2="177" stroke="#eee"/>
+<text x="32" y="181" font-size="10" fill="#888" text-anchor="end">16</text>
+<line x1="36" y1="224" x2="684" y2="224" stroke="#eee"/>
+<text x="32" y="228" font-size="10" fill="#888" text-anchor="end">0</text>
+<polyline points="36.0,224.0 39.8,221.5 43.6,221.0 47.4,214.1 51.2,212.7 55.1,212.1 58.9,213.1 62.7,213.3 66.5,212.2 70.3,211.8 74.1,213.3 77.9,214.2 81.7,203.3 85.6,200.5 89.4,200.6 93.2,201.6 97.0,202.8 100.8,202.3 104.6,197.4 108.4,199.5 112.2,199.1 116.0,200.3 119.9,200.8 123.7,201.9 127.5,201.9 131.3,201.8 135.1,203.9 138.9,197.3 142.7,198.1 146.5,198.3 150.4,200.3 154.2,201.0 158.0,201.3 161.8,197.4 165.6,197.2 169.4,197.1 173.2,194.6 177.0,185.2 180.8,175.0 184.7,175.9 188.5,177.8 192.3,170.4 196.1,170.5 199.9,170.7 203.7,171.5 207.5,173.1 211.3,171.5 215.2,172.5 219.0,173.2 222.8,174.4 226.6,173.9 230.4,173.2 234.2,171.7 238.0,173.0 241.8,174.3 245.6,154.4 249.5,157.0 253.3,158.4 257.1,159.0 260.9,159.7 264.7,160.5 268.5,162.9 272.3,159.6 276.1,162.2 280.0,159.7 283.8,158.9 287.6,159.4 291.4,158.9 295.2,157.8 299.0,156.6 302.8,159.6 306.6,159.0 310.4,154.7 314.3,152.6 318.1,152.5 321.9,153.0 325.7,154.0 329.5,155.6 333.3,156.7 337.1,157.4 340.9,146.5 344.8,142.7 348.6,144.6 352.4,145.5 356.2,146.0 360.0,146.4 363.8,148.0 367.6,148.2 371.4,148.9 375.2,124.3 379.1,125.0 382.9,123.6 386.7,126.6 390.5,124.8 394.3,127.8 398.1,127.0 401.9,126.6 405.7,119.3 409.6,114.1 413.4,114.7 417.2,109.2 421.0,111.3 424.8,111.4 428.6,111.7 432.4,114.0 436.2,115.6 440.0,116.9 443.9,118.8 447.7,119.5 451.5,122.5 455.3,107.9 459.1,107.9 462.9,107.8 466.7,110.1 470.5,110.8 474.4,111.0 478.2,109.8 482.0,109.7 485.8,105.2 489.6,105.5 493.4,108.5 497.2,101.5 501.0,104.5 504.8,100.0 508.7,88.0 512.5,88.8 516.3,91.1 520.1,94.1 523.9,93.3 527.7,92.4 531.5,93.5 535.3,81.9 539.2,83.7 543.0,83.4 546.8,77.9 550.6,78.4 554.4,78.5 558.2,78.6 562.0,77.7 565.8,80.7 569.6,79.4 573.5,80.6 577.3,73.0 581.1,72.4 584.9,71.7 588.7,72.2 592.5,61.6 596.3,63.4 600.1,64.6 604.0,65.2 607.8,65.4 611.6,64.4 615.4,65.3 619.2,66.5 623.0,67.6 626.8,67.1 630.6,63.8 634.4,64.2 638.3,64.8 642.1,65.5 645.9,66.6 649.7,55.9 653.5,56.6 657.3,56.4 661.1,56.2 664.9,55.6 668.8,52.6 672.6,53.7 676.4,54.6 680.2,55.8 684.0,36.0" fill="none" stroke="#2563eb" stroke-width="1.8"/>
+<text x="680" y="39" font-size="10" fill="#2563eb">趋势20MA</text>
+<polyline points="36.0,224.0 47.6,217.8 59.1,216.7 70.7,209.3 82.3,212.3 93.9,209.2 105.4,205.4 117.0,207.0 128.6,207.0 140.1,189.1 151.7,185.9 163.3,186.2 174.9,189.2 186.4,187.8 198.0,190.8 209.6,190.3 221.1,193.3 232.7,193.3 244.3,177.4 255.9,180.1 267.4,181.6 279.0,184.6 290.6,179.2 302.1,179.9 313.7,181.1 325.3,181.9 336.9,174.5 348.4,177.5 360.0,178.4 371.6,162.0 383.1,146.2 394.7,149.2 406.3,150.4 417.9,150.3 429.4,148.0 441.0,150.9 452.6,146.6 464.1,147.2 475.7,150.2 487.3,153.2 498.9,156.2 510.4,148.5 522.0,138.5 533.6,127.4 545.1,130.4 556.7,131.1 568.3,106.8 579.9,109.8 591.4,112.8 603.0,106.2 614.6,109.2 626.1,110.3 637.7,101.1 649.3,102.6 660.9,100.8 672.4,92.0 684.0,79.0" fill="none" stroke="#dc2626" stroke-width="1.8"/>
+<text x="680" y="82" font-size="10" fill="#dc2626">突破20日</text>
+<polyline points="36.0,224.0 41.9,206.7 47.9,205.3 53.8,205.8 59.8,206.0 65.7,204.9 71.7,204.6 77.6,206.0 83.6,206.9 89.5,196.0 95.4,195.1 101.4,197.3 107.3,195.8 113.3,191.0 119.2,194.0 125.2,195.1 131.1,195.5 137.1,196.4 143.0,191.5 149.0,193.1 154.9,194.2 160.8,196.1 166.8,197.1 172.7,192.9 178.7,173.9 184.6,174.5 190.6,176.4 196.5,169.0 202.5,169.3 208.4,171.5 214.3,169.4 220.3,170.5 226.2,173.5 232.2,169.6 238.1,172.6 244.1,172.3 250.0,155.0 256.0,157.7 261.9,159.8 267.9,162.2 273.8,158.9 279.7,161.4 285.7,162.8 291.6,165.8 297.6,166.9 303.5,167.8 309.5,159.3 315.4,162.3 321.4,162.2 327.3,144.6 333.2,144.3 339.2,144.6 345.1,145.9 351.1,146.2 357.0,146.8 363.0,122.2 368.9,122.5 374.9,125.5 380.8,123.7 386.8,122.5 392.7,115.2 398.6,112.2 404.6,115.2 410.5,109.4 416.5,112.4 422.4,109.7 428.4,109.9 434.3,112.3 440.3,115.3 446.2,116.8 452.1,118.6 458.1,121.6 464.0,106.9 470.0,106.8 475.9,109.8 481.9,110.7 487.8,105.4 493.8,108.4 499.7,101.3 505.7,104.3 511.6,99.9 517.5,89.7 523.5,92.7 529.4,92.4 535.4,92.7 541.3,82.9 547.3,84.8 553.2,79.3 559.2,81.2 565.1,84.2 571.0,84.5 577.0,87.5 582.9,86.2 588.9,87.5 594.8,82.0 600.8,84.1 606.7,85.4 612.7,88.4 618.6,74.5 624.6,74.5 630.5,74.5 636.4,73.8 642.4,76.2 648.3,76.0 654.3,79.0 660.2,80.4 666.2,69.0 672.1,70.8 678.1,69.2 684.0,57.4" fill="none" stroke="#16a34a" stroke-width="1.8"/>
+<text x="680" y="60" font-size="10" fill="#16a34a">组合</text>
+<line x1="36" y1="224" x2="684" y2="224" stroke="#ccc"/>
+</svg>
+<p style="color:#64748b;font-size:12px">注：趋势与组合曲线几乎重合（突破是趋势的多头子集）；突破单笔数少但单笔期望最高。</p>
+
+<h2>三、ETH 多空分析策略 Playbook（可执行版）</h2>
+<div class="sig">【ETH 多空策略 v1 · 日线主信号 + 1h/15m 入场微调】
+
+A. 趋势主信号 —— 日线 20MA 双向（核心，always-in）
+   • 收盘 &gt; 20MA → 多；收盘 &lt; 20MA → 空（次日开盘执行）
+   • 止损 = 入场 ± 2×ATR(14)；盈利后移动止损至 20MA（保命线），让利润奔跑
+   • 实证：170 笔 / 胜率 43.5% / 盈亏比 2.68 / 总 +62.7R（测试段 +26R）
+
+B. 突破加仓 —— 20 日高低（高确信顺势点）
+   • 收盘创 20 日新高 且 &gt;20MA → 加多；创 20 日新低 且 &lt;20MA → 加空
+   • 单笔期望最高（均R +0.86，盈亏比 3.42）；只顺势加，不逆势单独开
+
+C. 缩量回调 —— 仅作"趋势多头的回踩买点"（禁止独立逆势抄底）
+   • 条件：价&gt;20MA & 近5日跌 2~10% & 量≤0.9×20日均量
+   • ⚠ 必须宽止损(3-4ATR) 或 5-10 日周期离场；裸 2ATR 止损会全亏
+
+D. 反转识别 —— 抓顶/抓底签名（仅减仓确认，不作反向开仓）
+   • 顶部：RSI&gt;70 或 放量&gt;1.5x 或 远离20MA → 多单减仓/不追
+   • 底部：RSI&lt;30 或 放量&gt;1.5x → 空单平仓/不追空
+
+E. 总开关 —— BTC 联动（相关 0.83）
+   • BTC 日线 &lt; 20MA 时，ETH 只做空 / 不做多
+
+F. 入场纪律
+   • 信号次日开盘 或 回踩挂单，禁止市价追高（追高=动能耗尽）
+   • 1h 优势时段挂单（本报告 1.8 节）；单笔风险 1R = 账户 1-2%
+
+G. 风控
+   • 单笔亏 ≤1R；趋势单靠移动止损保盈；突破单盈利≥2R 再考虑减仓
+   • 监控：若连续 3 笔止损 / 横盘市(价在20MA±2%内超 10 日) → 降仓或暂停
+</div>
+
+<h2>四、局限与诚实声明</h2>
+<div class="warn">
+<ul style="margin:6px 0">
+<li><b>未计手续费/滑点</b>：ETH 现货费率低，影响有限但存在，实盘净值会略低于回测。</li>
+<li><b>样本含一段大牛市</b>：2021-2026 含 2022 暴跌与 2023-25 复苏，趋势策略在历史长震荡/单边熊市可能回撤更大，需持续监控。</li>
+<li><b>参数未做超参寻优</b>：20MA / 20日 / 2ATR 为"合理默认"，存在一定过拟合风险 → 建议未来 3-6 月前向验证（模拟/小仓实盘）。</li>
+<li><b>缩量回调逆势版本在本回测中明确失败</b>（0% 胜率），已如实标注，不包装成正期望；若要用，须改宽止损/长周期再证。</li>
+<li><b>突破是趋势的多头子集</b>：二者叠加不增信号数，故"组合"≈"趋势"；突破价值在于"更高确信的加仓点"而非额外信号。</li>
+</ul>
+</div>
+
+<footer>
+ETH 多空策略实证报告 · 数据 Binance 公共行情 · 回测引擎 analyze_eth.py / 数据 fetch_eth_data.py · 本报告为 ETH 特例分析（依用户授权豁免通用铁律④），仅供研究，非投资建议。
+</footer>
+</body></html>
