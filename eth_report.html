@@ -205,9 +205,9 @@ G. 风控
 <h2>三·B、实盘前向验证跟踪（真实出场口径·与回测同引擎）</h2>
 <p style="font-size:13px;color:#334155">入场方向 = 线上监控每日 vertdict（含 BTC 总开关）；出场 = 与回测完全相同的
 <b>1R=2×ATR14 止损 + 反向信号平仓</b>。因此战绩与回测 +62.7R <b>同口径可比</b>，可直接验证盈亏比。
-数据区间 2021-04-11 ~ 2026-09-11（共 1843 条有效信号）。</p>
-<p style="font-size:13px;color:#334155;background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 14px;border-radius:6px">自然出场（无持仓上限，与回测同引擎）：<b>143</b> 笔 · 胜率 <b>43.4%</b> · 均R <b>+0.440</b> · 盈亏比 <b>2.83</b> · 总R <b>+62.9R</b> · 最大DD <b>-4.4R</b>（对照回测趋势20MA 总 +62.7R；本前向含 BTC 总开关过滤，数量级应一致）。</p>
-<table><tr><th>持仓窗口</th><th>笔数</th><th>胜率</th><th>均R</th><th>中位R</th><th>盈亏比</th><th>总R</th><th>均持(日)</th></tr><tr><td>1日</td><td>950</td><td>58%</td><td>+0.131</td><td>+0.075</td><td>2.15</td><td>+124.1</td><td>1.0</td></tr><tr><td>3日</td><td>518</td><td>58%</td><td>+0.203</td><td>+0.094</td><td>2.28</td><td>+104.9</td><td>2.8</td></tr><tr><td>5日</td><td>381</td><td>54%</td><td>+0.234</td><td>+0.052</td><td>2.10</td><td>+89.0</td><td>4.2</td></tr><tr><td>10日</td><td>245</td><td>47%</td><td>+0.311</td><td>-0.059</td><td>2.33</td><td>+76.2</td><td>7.0</td></tr></table>
+数据区间 2021-04-12 ~ 2026-09-12（共 1842 条有效信号）。</p>
+<p style="font-size:13px;color:#334155;background:#f0fdf4;border-left:4px solid #16a34a;padding:10px 14px;border-radius:6px">自然出场（无持仓上限，与回测同引擎）：<b>143</b> 笔 · 胜率 <b>43.4%</b> · 均R <b>+0.439</b> · 盈亏比 <b>2.82</b> · 总R <b>+62.8R</b> · 最大DD <b>-4.4R</b>（对照回测趋势20MA 总 +62.7R；本前向含 BTC 总开关过滤，数量级应一致）。</p>
+<table><tr><th>持仓窗口</th><th>笔数</th><th>胜率</th><th>均R</th><th>中位R</th><th>盈亏比</th><th>总R</th><th>均持(日)</th></tr><tr><td>1日</td><td>949</td><td>58%</td><td>+0.131</td><td>+0.075</td><td>2.16</td><td>+124.7</td><td>1.0</td></tr><tr><td>3日</td><td>518</td><td>58%</td><td>+0.203</td><td>+0.094</td><td>2.28</td><td>+105.2</td><td>2.8</td></tr><tr><td>5日</td><td>380</td><td>54%</td><td>+0.236</td><td>+0.052</td><td>2.12</td><td>+89.6</td><td>4.2</td></tr><tr><td>10日</td><td>245</td><td>47%</td><td>+0.311</td><td>-0.059</td><td>2.33</td><td>+76.2</td><td>7.0</td></tr></table>
 <p style="color:#64748b;font-size:12px">解读：<b>natural 总R（+63.7R）即实际策略前向战绩</b>，与回测趋势 +62.7R 同量级（含 BTC 总开关过滤略高/低均属预期），
 证明回测盈亏比真实可复现；各 horizon 窗口 = 假设"每 k 日强制平仓"的敏感性分析（交易更频繁、总R 更高属正常）。
 前向胜率持续 &lt;35% 或总R 转负 → 触发参数重校准（见 validation_tasks.json ⑨）。
