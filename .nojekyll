@@ -1,0 +1,4 @@
+# 禁用 GitHub Pages 默认 Jekyll 构建，原样发布 main.py 生成的静态 HTML。
+# crypto-chan 报告为自包含纯静态文件（内联 CSS/JS），无需 Jekyll，
+# 且 Jekyll 会把 {{ }}/{% %} 当 Liquid 模板解析导致内容丢失。
+# 2026-09-13 重建：此前 .nojekyll 缺失导致线上被 Jekyll 改写（字节数不符）。
